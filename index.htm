@@ -1,0 +1,194 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>百合天地</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+    <link rel="stylesheet" href="/css/site.css" />
+    <link rel="stylesheet" href="/css/image-cover-frame.css" />
+    <link rel="stylesheet" href="/css/dynamic-form.css" />
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/vue@3.2.45/dist/vue.global.prod.js" type="text/javascript"></script>
+    <script src="/lib/Sortable/Sortable.min.js?v=triwwTQbab50G53J2FyiXb7JlioSKMdmFfzZ1rel42Y"></script>
+    <script src="/lib/vue/vuedraggable.umd.min.js?v=Lw1ELK88FKeUDXLNnLnHq0i7DjoaZVc2XqGnomXivjU"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+    <script src="/js/site.js?v=Dczxt5NuA0rUBOxULTgExDzm3GOIcsTv--kGt06O6mg"></script>
+    <script src="/js/vue-mixin.js?v=60-8lnAHDhQs4zrnv01y_MNen1l1tnXdiqLCDE4wdc4"></script>
+</head>
+
+<body id="app">
+    <script>
+        var thisApp;
+        var component;
+        const baseMixin = {
+            data() {
+                return {
+                    Layout: {
+                        headTitle: document.getElementsByTagName("title")[0].innerHTML,
+                    },
+                    dbAssembly: {
+                        ready: false,
+                    },
+                }
+            },
+            beforeCreate() {
+                thisApp = this
+            },
+            created() {
+                thisApp.setHeadTitle(thisApp.pageTitle)
+            },
+            computed: {
+            },
+            methods: {
+                firestoreInit: function () {
+                    return new Promise((resolve, reject) => {
+                        import("/js/firestore.js")
+                            .then(module => {
+                                thisApp.dbAssembly = module.dbAssembly;
+                                resolve(true);
+                            })
+                    });
+                },
+                getDbAssembly: async function () {
+                    let { ready } = thisApp.dbAssembly;
+
+                    if (!ready) { await thisApp.firestoreInit(); }
+                    return thisApp.dbAssembly;
+                },
+                dbInsert: async function (collectionName, data, docId = null) {
+                    let { addDoc, setDoc, doc, collection, db } = await thisApp.getDbAssembly();
+                    if (docId != null) { return await setDoc(doc(db, collectionName, docId), data); }
+                    return await addDoc(collection(db, collectionName), data);
+                },
+                dbUpdate: async function (collectionName, docId, data) {
+                    let { doc, updateDoc, db } = await thisApp.getDbAssembly();
+                    const docRef = doc(db, collectionName, docId);
+                    return await updateDoc(docRef, data);
+                },
+                dbQuery: async function (collectionName, docId = null) {
+                    let { db, getDocs, collection } = await thisApp.getDbAssembly();
+                    if (docId = null) { return await getDocs(doc(db, collectionName, docId)); }
+                    return await getDocs(collection(db, collectionName));
+                },
+                dbDeleteDoc: async function (collectionName, docId) {
+                    let { doc, deleteDoc } = await thisApp.getDbAssembly();
+                    return await deleteDoc(doc(db, collectionName, docId));
+                },
+                signIn: async function () {
+                    let { googleSignIn } = await thisApp.getDbAssembly();
+                    return await googleSignIn();
+                },
+                signInWithEmail: async function (email, password) {
+                    let { emailSignIn } = await thisApp.getDbAssembly();
+                    return await emailSignIn(email, password);
+                },
+                newGuid: function () {
+                    return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
+                        (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+                    );
+                },
+                setHeadTitle(title) {
+                    if (!title) { return; }
+                    document.getElementsByTagName("title")[0].innerHTML = thisApp.Layout.headTitle + ' - ' + title;
+                },
+
+            },
+        }
+    </script>
+
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3 px-5 nav-shadow navbar-animation">
+            <div class="container-fluid">
+                <a class="navbar-brand fw-bold fs-3 logo-text" href="/">百合天地</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item me-3 px-2">
+                            <a class="nav-link text-dark" href="/manga">百合漫畫區</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container header-margin">
+        <main role="main" class="pb-3">
+            <div class="background-video pc-limit">
+                <img src="/image/bg.jpg" style=" opacity: 0.8; width: 100vw; height:auto" />
+            </div>
+
+            <div class="background-video mobile-limit">
+                <img src="/image/bg.jpg" style=" opacity: 0.8; width: 100vw; height:auto" />
+            </div>
+            
+
+<div class="card card-transparent shadow-sm mb-3">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-120">
+                <p class="fw-bold fs-5 title-text">網站介紹</p>
+                大家好，我是百合中毒患者<br />
+                網站使用的是<a href="https://s7514381.github.io/" target="_blank">s7514381.github.io</a>大佬自製的框架，並且協助製作而成。各位有興趣可以去參考學習。<br /><br />
+                這算是個人紀錄的一個部落格提供給各位參考查詢，但是本站只介紹有女孩子之間戀愛的百合也就是GL作品，所以在本站所說的百合指的都是GL作品。希望可以讓有相同愛好的各位可以節省找尋百合作品的時間，如果有沒有收集到的作品也歡迎聯繫我!<br /><br />
+                主要是漫畫類作品，包含小說的漫畫化，動畫作品也有收集在內，單純只有小說的作品就不介紹了。<br />
+                pixiv以及twitter上也有許多的創作百合，但多數是短篇作品就不一一介紹了，畢竟數量繁多。這裡只介紹有商業化的也就是有連載或是出單行本並且不是短篇(至少有一本的篇幅)的作品，若是有用愛發電自行連載的也有收集。<br /><br />
+                相關連結頁面有放一些平常我在用的網站供各位參考。若是有任何問題歡迎聯繫我<a href="mailto:zrobbertz@gmail.com">zrobbertz@gmail.com</a>。
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-3">
+    <div class="card-header"><p class="fw-bold fs-5 title-text mb-0">最近更新</p></div>
+    <div class="card-body">
+        <p>2023/5/30 "ふたり部屋"次回完結!!</p>
+        <pre class="fw-bold fs-25">2023/5/30 "ふたり部屋"次回完結!!</pre>
+    </div>
+</div>
+
+
+<script>
+    component = {
+        mixins: [baseMixin],
+        data() {
+            return {
+                pageTitle: '首頁',
+
+            }
+        },
+        async created() {
+            //await thisApp.signIn();
+        },
+        methods: {
+
+        },
+    }
+    var formComponent = Vue.createApp(component)
+</script>
+
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container">
+            &copy; 2023 - Github - <a style="color: #6c757d" href="/Home/UpdateRenderView">更新</a>
+        </div>
+    </footer>
+
+    <script>
+        var vApp = formComponent.mount('#app')
+    </script>
+
+
+
+</body>
+</html>
