@@ -67,12 +67,12 @@
 </div>
 
 
-<div v-for="(v, i) in mangaData" v-show="hasIntersection(v.tags, tagList)">
+<div v-for="([key, v], i) in Object.entries(mangaData)" v-show="hasIntersection(v.tags, tagList)">
 	<div class="card shadow-sm mb-3">
 		<div class="card-body">
 			<div class="row align-items-center">
 				<div class="col-3 col-sm-2 col-lg-1">
-					<img :src="'/image/Manga/' + v.name + '.jpg'" alt="Manga Image" style="max-height: 100px; max-width: 50px;" />
+					<img :src="urlData[key]" alt="" style="max-height: 100px; max-width: 50px;" />
 				</div>
 				<div class="col-9 col-sm-6 col-lg-7">
 					<div class="row">
@@ -100,14 +100,15 @@
 		data() {
 			return {
 				pageTitle: '百合漫畫區',
-				mangaData: [],
-				tagList: ['連載中', '已完結', '日本', '中國', '韓國', '其他地區',],
-				hiddenTagList: ['斷更', '腰斬', '不定期更新', 'NTR', '微雷',],
+				mangaData: {},
+				tagList: ['日本', '中國', '韓國', '其他地區',],
+				hiddenTagList: [],
 				//selectedOption: "show",
 				searchType: "partial",
 				searchMode: 1,
 				tagType: [],
 				tagData: [],
+				urlData:{},
 			}
 		},
 		created() {
@@ -151,18 +152,45 @@
 			async fetchMangaData() {
 				try {
 					let mangaList = await this.dbQuery("Manga");
+					let imagePathsId = [];
+
 					mangaList.forEach((doc) => {
-						this.mangaData.push(doc.data());
-						//console.log(doc.id, " => ", doc.data());
+						this.mangaData[doc.id] = doc.data();
+						imagePathsId.push(doc.id);
 					});
+
 					let tagList = await this.dbQuery("Tags", "Manga");
 					tagList.forEach((doc) => {
 						this.tagType.push(Object.keys(doc.data().tagData).sort((a, b) => a.localeCompare(b)));
 						this.tagData.push(doc.data().tagData);
 					});
+
+					this.downloadImagesInOrder(imagePathsId)
+						.then(() => {
+						})
+						.catch((error) => {
+							console.error("download failed:", error);
+						});
+
 				} catch (error) {
 					console.error("Error fetching manga data:", error);
 				}
+			},
+
+			getImagePaths(docId) {
+				const imagePath = 'Manga/' + docId + '.jpg';
+				return imagePath;
+			},
+
+			async downloadImagesInOrder(imagePathsId) {
+				if (imagePathsId.length === 0) {
+					return Promise.resolve();
+				}
+
+				const imagePath = this.getImagePaths(imagePathsId[0]);
+				this.urlData[imagePathsId[0]] = await this.getImage(imagePath)
+
+				return this.downloadImagesInOrder(imagePathsId.slice(1));
 			},
 
 			updateHiddenTagList(value) {

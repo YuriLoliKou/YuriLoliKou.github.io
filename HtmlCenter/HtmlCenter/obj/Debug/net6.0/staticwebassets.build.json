@@ -1,6 +1,6 @@
 {
   "Version": 1,
-  "Hash": "jn1Fb9Vwstm/txh8/BCzjhlGsfEKp1cBqMdyxayXN78=",
+  "Hash": "8EmfjPTj2p4zdOgVcyMdFJtu19gNGiD8ELofKm4yMLI=",
   "Source": "HtmlCenter",
   "BasePath": "_content/HtmlCenter",
   "Mode": "Default",
@@ -151,23 +151,6 @@
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
       "OriginalItemSpec": "wwwroot\\image\\bg.jpg"
-    },
-    {
-      "Identity": "C:\\Users\\zrobb\\OneDrive\\文件\\GitHub\\YuriLoliKou.github.io\\HtmlCenter\\HtmlCenter\\wwwroot\\image\\bg-2.jpg",
-      "SourceId": "HtmlCenter",
-      "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\zrobb\\OneDrive\\文件\\GitHub\\YuriLoliKou.github.io\\HtmlCenter\\HtmlCenter\\wwwroot\\",
-      "BasePath": "_content/HtmlCenter",
-      "RelativePath": "image/bg-2.jpg",
-      "AssetKind": "All",
-      "AssetMode": "All",
-      "AssetRole": "Primary",
-      "RelatedAsset": "",
-      "AssetTraitName": "",
-      "AssetTraitValue": "",
-      "CopyToOutputDirectory": "Never",
-      "CopyToPublishDirectory": "PreserveNewest",
-      "OriginalItemSpec": "wwwroot\\image\\bg-2.jpg"
     },
     {
       "Identity": "C:\\Users\\zrobb\\OneDrive\\文件\\GitHub\\YuriLoliKou.github.io\\HtmlCenter\\HtmlCenter\\wwwroot\\image\\Manga\\「就憑你也想打敗魔王嗎」被勇者一行所驅逐的少女要如何才能在王都過上自由的生活.jpg",

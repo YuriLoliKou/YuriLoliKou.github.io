@@ -143,9 +143,20 @@ header {
 }
 
 .card-transparent {
-    background-color: #ffffff8a !important;
+    background-color: #ffffffa0 !important;
 }
 
 .form-check-label.strikethrough {
     text-decoration: line-through;
+}
+
+.anim-fade-in {
+    animation: fade-in .4s ease both;
+}
+
+@keyframes fade-in {
+    0% {
+        transform: translateX(20px);
+        opacity: 0;
+    }
 }

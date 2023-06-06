@@ -88,6 +88,10 @@
                     let { emailSignIn } = await thisApp.getDbAssembly();
                     return await emailSignIn(email, password);
                 },
+                getImage: async function (path) {
+                    let { getImage } = await thisApp.getDbAssembly();
+                    return await getImage(path);
+                },
                 newGuid: function () {
                     return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
                         (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
@@ -147,7 +151,7 @@
     </div>
 </div>
 
-<div class="card shadow-sm mb-3">
+<div class="card card-transparent shadow-sm mb-3">
     <div class="card-header"><p class="fw-bold fs-5 title-text mb-0">最近更新</p></div>
     <div class="card-body">
         <p>2023/5/30 "ふたり部屋"次回完結!!</p>

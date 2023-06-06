@@ -3,6 +3,7 @@
 import { getAuth, signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js'
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
 import { getFirestore, collection, setDoc, addDoc, getDocs, doc, query, where, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-storage.js";
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -23,6 +24,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore();
 const auth = getAuth();
 const provider = new GoogleAuthProvider();
+const storage = getStorage();
 
 async function googleSignIn() {
     let result;
@@ -53,8 +55,37 @@ async function emailSignIn(email, password) {
     return result;
 }
 
+async function getImage(path) {
+    let result;
+
+    const starsRef = ref(storage, path);
+    await getDownloadURL(starsRef)
+        .then((url) => {
+            result = url;
+        })
+        .catch((error) => {
+            // A full list of error codes is available at
+            // https://firebase.google.com/docs/storage/web/handle-errors
+            switch (error.code) {
+                case 'storage/object-not-found':
+                    console.log("File doesn't exist");
+                    break;
+                case 'storage/unauthorized':
+                    console.log("User doesn't have permission to access the object");
+                    break;
+                case 'storage/canceled':
+                    console.log("User canceled the upload");
+                    break;
+                case 'storage/unknown':
+                    console.log("Unknown error occurred, inspect the server response");
+                    break;
+            }
+        });
+    return result;
+}
+
 
 export const dbAssembly = {
     ready: true,
-    db, collection, setDoc, addDoc, getDocs, doc, query, where, updateDoc, googleSignIn, emailSignIn, signInWithEmailAndPassword, createUserWithEmailAndPassword
+    db, collection, setDoc, addDoc, getDocs, doc, query, where, updateDoc, googleSignIn, emailSignIn, signInWithEmailAndPassword, createUserWithEmailAndPassword, getImage
 }
