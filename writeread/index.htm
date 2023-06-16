@@ -1,0 +1,250 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>百合天地</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+    <link rel="stylesheet" href="/css/site.css" />
+    <link rel="stylesheet" href="/css/image-cover-frame.css" />
+    <link rel="stylesheet" href="/css/dynamic-form.css" />
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/vue@3.2.45/dist/vue.global.prod.js" type="text/javascript"></script>
+    <script src="/lib/Sortable/Sortable.min.js?v=triwwTQbab50G53J2FyiXb7JlioSKMdmFfzZ1rel42Y"></script>
+    <script src="/lib/vue/vuedraggable.umd.min.js?v=Lw1ELK88FKeUDXLNnLnHq0i7DjoaZVc2XqGnomXivjU"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+    <script src="/js/site.js?v=Dczxt5NuA0rUBOxULTgExDzm3GOIcsTv--kGt06O6mg"></script>
+    <script src="/js/vue-mixin.js?v=60-8lnAHDhQs4zrnv01y_MNen1l1tnXdiqLCDE4wdc4"></script>
+</head>
+
+<body id="app">
+    <script>
+        var thisApp;
+        var component;
+        const baseMixin = {
+            data() {
+                return {
+                    Layout: {
+                        headTitle: document.getElementsByTagName("title")[0].innerHTML,
+                    },
+                    dbAssembly: {
+                        ready: false,
+                    },
+                }
+            },
+            beforeCreate() {
+                thisApp = this
+            },
+            created() {
+                thisApp.setHeadTitle(thisApp.pageTitle)
+            },
+            computed: {
+            },
+            methods: {
+                firestoreInit: function () {
+                    return new Promise((resolve, reject) => {
+                        import("/js/firestore.js?v=1.0.04")
+                            .then(module => {
+                                thisApp.dbAssembly = module.dbAssembly;
+                                resolve(true);
+                            })
+                    });
+                },
+                getDbAssembly: async function () {
+                    let { ready } = thisApp.dbAssembly;
+
+                    if (!ready) { await thisApp.firestoreInit(); }
+                    return thisApp.dbAssembly;
+                },
+                dbInsert: async function (collectionName, data, docId = null) {
+                    let { addDoc, setDoc, doc, collection, db } = await thisApp.getDbAssembly();
+                    if (docId != null) { return await setDoc(doc(db, collectionName, docId), data); }
+                    else { return await addDoc(collection(db, collectionName), data); }
+                    
+                },
+                dbUpdate: async function (collectionName, docId, data) {
+                    let { doc, updateDoc, db } = await thisApp.getDbAssembly();
+                    const docRef = doc(db, collectionName, docId);
+                    return await updateDoc(docRef, data);
+                },
+                dbQuery: async function (collectionName, docId = null) {
+                    let { db, doc, getDoc, getDocs, collection } = await thisApp.getDbAssembly();
+                    if (docId != null) { return await getDoc(doc(db, collectionName, docId)); }
+                    else { return await getDocs(collection(db, collectionName)); }
+                },
+                dbQueryByWhere: async function (collectionName, condition) {
+                    let { db, collection, query, where, getDocs } = await thisApp.getDbAssembly();
+                    const q = query(collection(db, collectionName), condition);
+                    return await getDocs(q);
+                },
+                dbDeleteDoc: async function (collectionName, docId) {
+                    let { db, doc, deleteDoc } = await thisApp.getDbAssembly();
+                    return await deleteDoc(doc(db, collectionName, docId));
+                },
+                signIn: async function () {
+                    let { googleSignIn } = await thisApp.getDbAssembly();
+                    return await googleSignIn();
+                },
+                signInWithEmail: async function (email, password) {
+                    let { emailSignIn } = await thisApp.getDbAssembly();
+                    return await emailSignIn(email, password);
+                },
+                getImage: async function (path) {
+                    let { getImage } = await thisApp.getDbAssembly();
+                    return await getImage(path);
+                },
+                deleteImage: async function (fileName) {
+                    let { deleteImage } = await thisApp.getDbAssembly();
+                    return await deleteImage(fileName);
+                },
+                uploadImage: async function (imageFile, fileName) {
+                    let { uploadImage } = await thisApp.getDbAssembly();
+                    return await uploadImage(imageFile, fileName);
+                },
+                newGuid: function () {
+                    return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
+                        (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+                    );
+                },
+                setHeadTitle(title) {
+                    if (!title) { return; }
+                    document.getElementsByTagName("title")[0].innerHTML = thisApp.Layout.headTitle + ' - ' + title;
+                },
+
+            },
+        }
+    </script>
+
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3 px-5 nav-shadow navbar-animation">
+            <div class="container-fluid">
+                <a class="navbar-brand fw-bold fs-3 logo-text" href="/">百合天地</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item me-3 px-2">
+                            <a class="nav-link text-dark" href="/manga">百合漫畫區</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container header-margin">
+        <main role="main" class="pb-3">
+            <div class="background-video pc-limit">
+                <img src="/image/bg.jpg" style=" opacity: 0.8; width: 100vw; height:auto" />
+            </div>
+
+            <div class="background-video mobile-limit">
+                <img src="/image/bg.jpg" style=" opacity: 0.8; width: 100vw; height:auto" />
+            </div>
+            
+<script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+<script>
+	component = {
+		mixins: [baseMixin],
+		data() {
+			return {
+				XLSX: {},
+			}
+		},
+		created() {
+			//import("https://unpkg.com/xlsx/dist/xlsx.full.min.js")
+			//	.then(module => {
+			//		this.XLSX = module.default; // 取得模塊的預設導出物件
+
+			//		this.JsonToExcel();
+			//	})
+			//	.catch(error => {
+			//		console.error(error);
+			//	});
+
+			this.JsonToExcel();
+		},
+		computed: {
+			
+		},
+		methods: {
+			async JsonToExcel(){
+				const jsonData = 
+					{ "05OENR5eFRWS2EiiZsyJ": { "originalAuthor": "椋木ななつ", "name": "天使降臨到我身邊！", "tags": ["001", "021", "043"], "originalName": "私に天使が舞い降りた！", "author": "椋木ななつ" }, "0UJB7MlkTr4qjo9oGjzd": { "author": "古鉢るか", "name": "好事多磨", "originalName": "はなにあらし", "originalAuthor": "古鉢るか", "tags": ["001", "021"] }, "2gN7eE4L5yfMvdrGekCc": { "name": "蝙蝠殺手", "tags": ["001", "021"], "originalName": "MURCIELAGO -ムルシエラゴ-", "author": "よしむらかな", "originalAuthor": "よしむらかな" }, "5JZw4dAbSVFU8XPzRq6l": { "originalAuthor": "河合朗", "name": "推成了我妹妹", "tags": ["001", "023"], "author": "河合朗", "originalName": "推しが妹になりまして。" }, "5WrHZk2qkflEK86ZoM19": { "author": "水野英多", "tags": ["001", "021", "042", "043"], "originalAuthor": "宮澤伊織", "name": "裏世界遠足", "originalName": "裏世界ピクニック" }, "9GRJ8KJjZxmPlEILvVh4": { "originalName": "えろいことするために巨乳美少女奴隷を買ったはずが、お師匠さまと慕われて思った通りにいかなくなる話", "originalAuthor": "煮豆シューター", "author": "佐藤36", "tags": ["001", "021", "042"], "name": "色慾薰心買下巨乳美少女奴隸卻被尊為師傅而事與願違" }, "CeRwJNrKAuT1MtJpwDUp": { "author": "くずしろ", "name": "雨夜明月", "tags": ["001", "021"], "originalAuthor": "くずしろ", "originalName": "雨夜の月" }, "CuJlU5kdyLFSzZB4VKMt": { "author": "柚原もけ（電撃大王版）,まに（ガンガンONLINE版）", "tags": ["001", "021", "042", "043"], "originalName": "安達としまむら", "name": "安達與島村", "originalAuthor": "入間人間" }, "ELmLnz4dfqEFz5Ck1ec9": { "author": "のやま", "originalAuthor": "のやま", "name": "我雖是精英天使，但是正為了難以攻陷的JK而苦惱", "originalName": "私、エリート天使ですが難攻不落なJKに困ってます！", "tags": ["001", "021"] }, "GSCSEsMq0eTEj9ZjAFah": { "tags": ["001", "021", "042", "043"], "name": "轉生王女和天才千金的魔法革命", "originalName": "転生王女と天才令嬢の魔法革命", "author": "南高春告", "originalAuthor": "鴉ぴえろ" }, "KgzcK7Dlsq5ZMxcaSPe5": { "name": "此花綺譚", "tags": ["001", "021", "043"], "author": "天乃咲哉", "originalAuthor": "天乃咲哉", "originalName": "このはな綺譚" }, "O9BM2i2d21UfeyIOnwoq": { "originalName": "吸血鬼の花嫁ーヴァンプドールのはなよめー", "name": "吸血鬼的新娘", "originalAuthor": "嵩乃朔", "author": "嵩乃朔", "tags": ["001", "023", "044"] }, "OhEjN8RvLNFM3efmKQMb": { "author": "青乃下", "originalName": "私の推しは悪役令嬢。", "originalAuthor": "いのり。", "tags": ["001", "021", "042", "043"], "name": "我的推是壞人大小姐。" }, "T4A1bbU6ZNFCi7go6ZxZ": { "originalAuthor": "キキ", "name": "「就憑你也想打敗魔王嗎」被勇者一行所驅逐的少女要如何才能在王都過上自由的生活", "originalName": "「お前ごときが魔王に勝てると思うな」と勇者パーティを追放されたので、王都で気ままに暮らしたい", "author": "南方純", "tags": ["001", "021", "041", "042"] }, "UP7fyAUHiMcvxbrqaqHk": { "tags": ["001", "021"], "name": "溫熱的銀蓮花", "author": "桜木蓮", "originalAuthor": "桜木蓮", "originalName": "アネモネは熱を帯びる" }, "XhfxQbdldxUL0CCOemQ5": { "originalName": "きみと観たいレースがある", "author": "くわばらたもつ", "originalAuthor": "渡辺 零・駿馬 京", "name": "想和你一起看的比賽", "tags": ["001", "021"] }, "ZBL80Y5o8OnhYZMPIPPf": { "tags": ["001", "021", "045"], "originalName": "どれが恋かがわがからない", "originalAuthor": "奥たまむし", "author": "奥たまむし", "name": "我也不知道誰才是真愛" }, "cHV93rIMBzC591h6bHZX": { "name": "百合是我的工作！", "originalName": "私の百合はお仕事です！", "tags": ["001", "021", "043"], "author": "未幡", "originalAuthor": "未幡" }, "cy8F2ceeGTC5tM3fXtMe": { "name": "我怎麼可能成為你的戀人，不行不行！(※不是不可能！？)", "tags": ["001", "021", "042"], "originalAuthor": "みかみてれん", "originalName": "わたしが恋人になれるわけないじゃん、ムリムリ! (※ムリじゃなかった!?)", "author": "むっしゅ" }, "gciC2r2qoGRrMHzAZeDz": { "originalName": "ネタキャラ転生とかあんまりだ！", "name": "梗角色轉生太過頭了", "tags": ["001", "021", "041", "042"], "author": "あまねかむらぎ", "originalAuthor": "音無奏" }, "kCcwScDVYKpYx4XMVGDK": { "tags": ["001", "021"], "originalAuthor": "ヒジキ", "originalName": "ケイヤクシマイ", "name": "契約姐妹", "author": "ヒジキ" }, "nmfMFaE6ofTt2NSpWu9b": { "tags": ["001", "022"], "name": "我的吸血鬼王子", "originalAuthor": "アキリ", "author": "アキリ", "originalName": "ヴァンピアーズ" }, "pCrVZN3SVMVy66EPpr7r": { "originalAuthor": "", "author": "星際數科", "name": "野百合與紫羅蘭", "originalName": "野百合與紫羅蘭", "tags": ["002", "024"] }, "rejCCqfrUNpVeOW3sD7m": { "originalAuthor": "吉村佳", "originalName": "晴れ晴れ日和", "tags": ["001", "021", "041"], "name": "晴天的幼女", "author": "吉村佳" }, "u7TwLP3e9haLZqU6syVB": { "originalName": "わたしのために脱ぎなさいっ!", "author": "九郎", "originalAuthor": "九郎", "tags": ["001", "021"], "name": "請為了我脫光身上所有衣服" }, "wwI6dsPakwdKgOIrQPca": { "originalAuthor": "タチ", "originalName": "桜Trick", "author": "タチ", "name": "櫻trick", "tags": ["001", "022", "043"] } }
+				;
+
+				const keys = Object.keys(jsonData);
+				console.log(jsonData);
+				for (const key in jsonData) {
+					const data = jsonData[key];
+
+					const formData = {
+						name: data.name,
+						originalName: data.originalName,
+						author: data.author,
+						originalAuthor: data.originalAuthor,
+						tags: data.tags,
+					};
+					//await this.dbInsert("Manga", formData);
+					console.log(formData);
+				}
+
+
+				//var worksheet = XLSX.utils.json_to_sheet(jsonData);
+				//var workbook = XLSX.utils.book_new();
+				//XLSX.utils.book_append_sheet(workbook, worksheet, "Manga");
+
+				//var wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'binary' });
+
+				//function s2ab(s) {
+				//	var buf = new ArrayBuffer(s.length);
+				//	var view = new Uint8Array(buf);
+				//	for (var i = 0; i < s.length; i++) {
+				//		view[i] = s.charCodeAt(i) & 0xFF;
+				//	}
+				//	return buf;
+				//}
+
+				//var blob = new Blob([s2ab(wbout)], { type: 'application/octet-stream' });
+				//var url = URL.createObjectURL(blob);
+				//// 創建一個鏈接元素，用於下載Excel文件
+				//var a = document.createElement('a');
+				//a.href = url;
+				//a.download = 'data.xlsx';
+				//a.click();
+
+				//// 釋放URL對象
+				//URL.revokeObjectURL(url);
+			}
+		},
+		watch: {
+			
+		},
+		async mounted() {
+		}
+	}
+	var formComponent = Vue.createApp(component)
+</script>
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container">
+            &copy; 2023 - Github - <a style="color: #6c757d" href="/Home/UpdateRenderView">更新</a>
+        </div>
+    </footer>
+
+    <script>
+        var vApp = formComponent.mount('#app')
+    </script>
+
+
+
+</body>
+</html>

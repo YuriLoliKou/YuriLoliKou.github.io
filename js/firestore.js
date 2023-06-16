@@ -2,8 +2,8 @@
 //import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-analytics.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js'
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-import { getFirestore, collection, setDoc, addDoc, getDocs, doc, query, where, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
-import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-storage.js";
+import { getFirestore, collection, setDoc, addDoc, getDoc, getDocs, deleteDoc, doc, query, where, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+import { getStorage, ref, getDownloadURL, uploadBytes, deleteObject } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-storage.js";
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -84,8 +84,23 @@ async function getImage(path) {
     return result;
 }
 
+async function uploadImage(imageFile, fileName) {
+    const storageRef = ref(storage, 'gs://yurisite.appspot.com/' + fileName);
+    await uploadBytes(storageRef, imageFile);
+    console.log('圖片已上傳至 Firebase Cloud Storage');
+}
+
+async function deleteImage(fileName) {
+    const desertRef = ref(storage, 'gs://yurisite.appspot.com/' + fileName);
+    deleteObject(desertRef).then(() => {
+        console.log('圖片已刪除: ', fileName);
+    }).catch((error) => {
+        console.log('圖片刪除失敗: ', fileName);
+    });
+}
+
 
 export const dbAssembly = {
     ready: true,
-    db, collection, setDoc, addDoc, getDocs, doc, query, where, updateDoc, googleSignIn, emailSignIn, signInWithEmailAndPassword, createUserWithEmailAndPassword, getImage
+    db, collection, setDoc, addDoc, getDoc, getDocs, deleteDoc, doc, query, where, updateDoc, googleSignIn, emailSignIn, signInWithEmailAndPassword, createUserWithEmailAndPassword, getImage, uploadImage, deleteImage
 }

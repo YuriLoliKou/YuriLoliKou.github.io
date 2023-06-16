@@ -16,6 +16,10 @@ build_property.GenerateRazorMetadataSourceChecksumAttributes = true
 build_property.MSBuildProjectDirectory = C:\Users\zrobb\OneDrive\文件\GitHub\YuriLoliKou.github.io\HtmlCenter\HtmlCenter
 build_property._RazorSourceGeneratorDebug = 
 
+[C:/Users/zrobb/OneDrive/文件/GitHub/YuriLoliKou.github.io/HtmlCenter/HtmlCenter/Views/AdminConsole/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5Db25zb2xlXEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/zrobb/OneDrive/文件/GitHub/YuriLoliKou.github.io/HtmlCenter/HtmlCenter/Views/Home/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
@@ -38,6 +42,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/Users/zrobb/OneDrive/文件/GitHub/YuriLoliKou.github.io/HtmlCenter/HtmlCenter/Views/ViewRender/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVmlld1JlbmRlclxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/zrobb/OneDrive/文件/GitHub/YuriLoliKou.github.io/HtmlCenter/HtmlCenter/Views/WriteRead/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcV3JpdGVSZWFkXEluZGV4LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/zrobb/OneDrive/文件/GitHub/YuriLoliKou.github.io/HtmlCenter/HtmlCenter/Views/_ViewImports.cshtml]

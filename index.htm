@@ -48,7 +48,7 @@
             methods: {
                 firestoreInit: function () {
                     return new Promise((resolve, reject) => {
-                        import("/js/firestore.js")
+                        import("/js/firestore.js?v=1.0.04")
                             .then(module => {
                                 thisApp.dbAssembly = module.dbAssembly;
                                 resolve(true);
@@ -64,7 +64,8 @@
                 dbInsert: async function (collectionName, data, docId = null) {
                     let { addDoc, setDoc, doc, collection, db } = await thisApp.getDbAssembly();
                     if (docId != null) { return await setDoc(doc(db, collectionName, docId), data); }
-                    return await addDoc(collection(db, collectionName), data);
+                    else { return await addDoc(collection(db, collectionName), data); }
+                    
                 },
                 dbUpdate: async function (collectionName, docId, data) {
                     let { doc, updateDoc, db } = await thisApp.getDbAssembly();
@@ -72,12 +73,17 @@
                     return await updateDoc(docRef, data);
                 },
                 dbQuery: async function (collectionName, docId = null) {
-                    let { db, getDocs, collection } = await thisApp.getDbAssembly();
-                    if (docId = null) { return await getDocs(doc(db, collectionName, docId)); }
-                    return await getDocs(collection(db, collectionName));
+                    let { db, doc, getDoc, getDocs, collection } = await thisApp.getDbAssembly();
+                    if (docId != null) { return await getDoc(doc(db, collectionName, docId)); }
+                    else { return await getDocs(collection(db, collectionName)); }
+                },
+                dbQueryByWhere: async function (collectionName, condition) {
+                    let { db, collection, query, where, getDocs } = await thisApp.getDbAssembly();
+                    const q = query(collection(db, collectionName), condition);
+                    return await getDocs(q);
                 },
                 dbDeleteDoc: async function (collectionName, docId) {
-                    let { doc, deleteDoc } = await thisApp.getDbAssembly();
+                    let { db, doc, deleteDoc } = await thisApp.getDbAssembly();
                     return await deleteDoc(doc(db, collectionName, docId));
                 },
                 signIn: async function () {
@@ -91,6 +97,14 @@
                 getImage: async function (path) {
                     let { getImage } = await thisApp.getDbAssembly();
                     return await getImage(path);
+                },
+                deleteImage: async function (fileName) {
+                    let { deleteImage } = await thisApp.getDbAssembly();
+                    return await deleteImage(fileName);
+                },
+                uploadImage: async function (imageFile, fileName) {
+                    let { uploadImage } = await thisApp.getDbAssembly();
+                    return await uploadImage(imageFile, fileName);
                 },
                 newGuid: function () {
                     return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>

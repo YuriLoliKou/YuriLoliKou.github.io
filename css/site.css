@@ -160,3 +160,20 @@ header {
         opacity: 0;
     }
 }
+
+.fade-enter-active, .fade-leave-active {
+    transition: opacity .5s;
+}
+
+.fade-enter, .fade-leave-to {
+    opacity: 0;
+}
+
+.form-group {
+    display: block;
+    margin-bottom: 10px;
+}
+
+.text-center-self {
+    align-self: center;
+}

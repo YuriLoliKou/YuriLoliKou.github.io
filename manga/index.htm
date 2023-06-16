@@ -48,7 +48,7 @@
             methods: {
                 firestoreInit: function () {
                     return new Promise((resolve, reject) => {
-                        import("/js/firestore.js")
+                        import("/js/firestore.js?v=1.0.04")
                             .then(module => {
                                 thisApp.dbAssembly = module.dbAssembly;
                                 resolve(true);
@@ -64,7 +64,8 @@
                 dbInsert: async function (collectionName, data, docId = null) {
                     let { addDoc, setDoc, doc, collection, db } = await thisApp.getDbAssembly();
                     if (docId != null) { return await setDoc(doc(db, collectionName, docId), data); }
-                    return await addDoc(collection(db, collectionName), data);
+                    else { return await addDoc(collection(db, collectionName), data); }
+                    
                 },
                 dbUpdate: async function (collectionName, docId, data) {
                     let { doc, updateDoc, db } = await thisApp.getDbAssembly();
@@ -72,12 +73,17 @@
                     return await updateDoc(docRef, data);
                 },
                 dbQuery: async function (collectionName, docId = null) {
-                    let { db, getDocs, collection } = await thisApp.getDbAssembly();
-                    if (docId = null) { return await getDocs(doc(db, collectionName, docId)); }
-                    return await getDocs(collection(db, collectionName));
+                    let { db, doc, getDoc, getDocs, collection } = await thisApp.getDbAssembly();
+                    if (docId != null) { return await getDoc(doc(db, collectionName, docId)); }
+                    else { return await getDocs(collection(db, collectionName)); }
+                },
+                dbQueryByWhere: async function (collectionName, condition) {
+                    let { db, collection, query, where, getDocs } = await thisApp.getDbAssembly();
+                    const q = query(collection(db, collectionName), condition);
+                    return await getDocs(q);
                 },
                 dbDeleteDoc: async function (collectionName, docId) {
-                    let { doc, deleteDoc } = await thisApp.getDbAssembly();
+                    let { db, doc, deleteDoc } = await thisApp.getDbAssembly();
                     return await deleteDoc(doc(db, collectionName, docId));
                 },
                 signIn: async function () {
@@ -91,6 +97,14 @@
                 getImage: async function (path) {
                     let { getImage } = await thisApp.getDbAssembly();
                     return await getImage(path);
+                },
+                deleteImage: async function (fileName) {
+                    let { deleteImage } = await thisApp.getDbAssembly();
+                    return await deleteImage(fileName);
+                },
+                uploadImage: async function (imageFile, fileName) {
+                    let { uploadImage } = await thisApp.getDbAssembly();
+                    return await uploadImage(imageFile, fileName);
                 },
                 newGuid: function () {
                     return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
@@ -179,12 +193,12 @@
 				<button class="btn btn-outline-dark btn-sm" @click="clearAllTags">全部清除</button>
 			</div>
 
-			<template v-for="type in tagType[0]">
+			<template v-for="type in tagType">
 				<div class="d-block"></div>
-				<template v-for="(tag, index) in filteredTags(type)">
+				<template v-for="key of filteredTags(type)">
 					<div class="form-check form-check-inline">
-						<input v-model="tagList" :value="tag" class="form-check-input" type="checkbox" :id="'tagCheckbox' + tag" @change="updateHiddenTagList(tag)">
-						<label class="form-check-label" :class="{ 'strikethrough': isTagChecked(tag) }" :for="'tagCheckbox' + tag">{{ tag }}</label>
+						<input v-model="tagList" :value="key.id" class="form-check-input" type="checkbox" :id="'tagCheckbox' + key.name" @change="updateHiddenTagList(key.id)">
+						<label class="form-check-label" :class="{ 'strikethrough': isTagChecked(key.id) }" :for="'tagCheckbox' + key.name">{{ key.name }}</label>
 					</div>
 				</template>
 			</template>
@@ -204,14 +218,14 @@
 					<div class="row">
 						<p class="mb-0 px-0 col-3 col-sm-3 col-lg-2 " style="display: inline;">名稱:</p><p class="mb-0 col-9 col-sm-9 col-lg-10">{{ v.name }}</p>
 						<p class="mb-0 px-0 col-3 col-sm-3 col-lg-2" style="display: inline;">原名:</p><p class="mb-0 col-9  col-sm-9 col-lg-10">{{ v.originalName }}</p>
-						<p class="mb-0 px-0 col-3 col-sm-3 col-lg-2" style="display: inline;">作者:</p><p class="mb-0 col-9  col-sm-9 col-lg-10">{{v.author }}</p>
+						<p class="mb-0 px-0 col-3 col-sm-3 col-lg-2" style="display: inline;">作者:</p><p class="mb-0 col-9  col-sm-9 col-lg-10">{{ v.author }}</p>
 						<p class="mb-0 px-0 col-3 col-sm-3 col-lg-2" style="display: inline;">原作者:</p><p class="mb-0 col-9  col-sm-9 col-lg-10">{{ v.originalAuthor }}</p>
-						<p class="mb-0 px-0 col-3 d-sm-none" style="display: inline;">標籤:</p><p class="mb-0 col-9 d-sm-none" style="display: inline;">{{ v.tags.join(', ') }}</p>
+						<p class="mb-0 px-0 col-3 d-sm-none" style="display: inline;">標籤:</p><p class="mb-0 col-9 d-sm-none" style="display: inline;">{{ formatTags(v.tags) }}</p>
 					</div>
 				</div>
 				<div class="col-sm-4 col-lg-4 d-none d-sm-block">
 					<div class="row">
-						<p class="mb-0 px-0 col-3 col-sm-3 col-lg-2 d-none d-sm-block" style="display: inline;">標籤:</p><p class="mb-0 col-9 col-sm-9 col-lg-10 d-none d-sm-block" style="display: inline;">{{ v.tags.join(', ') }}</p>
+						<p class="mb-0 px-0 col-3 col-sm-3 col-lg-2 d-none d-sm-block" style="display: inline;">標籤:</p><p class="mb-0 col-9 col-sm-9 col-lg-10 d-none d-sm-block" style="display: inline;">{{ formatTags(v.tags) }}</p>
 					</div>
 				</div>
 			</div>
@@ -227,14 +241,14 @@
 			return {
 				pageTitle: '百合漫畫區',
 				mangaData: {},
-				tagList: ['日本', '中國', '韓國', '其他地區',],
+				tagList: ['001', '002', '003', '020',],
 				hiddenTagList: [],
 				//selectedOption: "show",
 				searchType: "partial",
 				searchMode: 1,
 				tagType: [],
 				tagData: [],
-				urlData:{},
+				urlData: {},
 			}
 		},
 		created() {
@@ -248,21 +262,29 @@
 
 			filteredTags() {
 				return (tagType) => {
-					for (const [key, value] of Object.entries(this.tagData[0])){
-						if (key == tagType){
-							return Reflect.get(this.tagData[0], key);
-						}
-					}
-					//return this.tagData.filter((tag) => tag === tagType);
+					const filteredTags = Object.entries(this.tagData)
+						.filter(([key, value]) => value.attribute == tagType)
+						.reduce((result, [key, value]) => {
+							result[key] = value;
+							return result;
+						}, {});
+					return filteredTags;
+					//for (const [key, value] of Object.entries(this.tagData)) {
+					//	if (value.attribute == tagType) {
+					//		return Reflect.get(this.tagData[0], key);
+					//	}
+					//}
 				};
 			},
 		},
 		methods: {
 			hasIntersection: function (ItemTags, tagList) {
+				//預設全選
 				//if (tagList.length === 0) {
 				//    return !this.hiddenTagList.some((tag) => ItemTags.includes(tag));
 				//}
 				//console.log("hasIntersection");
+
 				for (let i = 0; i < tagList.length; i++) {
 					switch (this.searchType) {
 						case "partial":
@@ -275,55 +297,116 @@
 				}
 			},
 
-			async fetchMangaData() {
+			async getFirestoreData() {
+				const cachedMangaData = localStorage.getItem('MangasData');
+				const cachedTagsData = localStorage.getItem('TagsData');
+				const cachedImagesData = localStorage.getItem('ImagesData');
+				let firstLoad = false;
+
+				if (cachedMangaData) {
+					this.mangaData = JSON.parse(cachedMangaData);
+				} else {
+					await this.fetchMangasData();
+					firstLoad = true;
+				}
+
+				if (cachedTagsData && !firstLoad) {
+					this.tagData = JSON.parse(cachedTagsData);
+					const attributes = new Set(Object.values(this.tagData).map(obj => obj.attribute));
+					this.tagType = Array.from(attributes).sort((a, b) => a.localeCompare(b));
+				} else {
+					await this.fetchTagsData();
+				}
+
+				if (cachedImagesData && !firstLoad) {
+					this.urlData = JSON.parse(cachedImagesData);
+				} else {
+					await this.fetchImagesData();
+				}
+
+				if (!firstLoad) { await this.checkFirestoreData(cachedMangaData); }
+			},
+
+			async fetchMangasData() {
 				try {
-					let mangaList = await this.dbQuery("Manga");
-					let imagePathsId = [];
+					//let mangaList = await this.dbQuery("Manga");
+					//for (let i = 0; i < mangaList.docs.length; i++) {	
+					//	let doc = mangaList.docs[i];
+					//	thisApp.mangaData[doc.id] = doc.data();
+					//}
+					//console.log(JSON.stringify(thisApp.mangaData))
 
-					mangaList.forEach((doc) => {
-						this.mangaData[doc.id] = doc.data();
-						imagePathsId.push(doc.id);
-					});
-
-					let tagList = await this.dbQuery("Tags", "Manga");
-					tagList.forEach((doc) => {
-						this.tagType.push(Object.keys(doc.data().tagData).sort((a, b) => a.localeCompare(b)));
-						this.tagData.push(doc.data().tagData);
-					});
-
-					this.downloadImagesInOrder(imagePathsId)
-						.then(() => {
-						})
-						.catch((error) => {
-							console.error("download failed:", error);
-						});
-
+					let mangaList = await this.dbQuery("Json", "Manga");
+					const jsonString = mangaList.data().jsonString;
+					const jsonData = JSON.parse(jsonString);
+					this.mangaData = jsonData;
+					localStorage.setItem('MangasData', JSON.stringify(this.mangaData));
+					console.log("fetchMangasData Success");
 				} catch (error) {
-					console.error("Error fetching manga data:", error);
+					console.error("Error fetching mangas data:", error);
 				}
 			},
 
-			getImagePaths(docId) {
-				const imagePath = 'Manga/' + docId + '.jpg';
-				return imagePath;
+			async fetchTagsData() {
+				//try {
+				//	let tagList = await this.dbQuery("Tags", "Manga");
+				//	this.tagType.push(Object.keys(tagList.data().tagData).sort((a, b) => a.localeCompare(b)));
+				//	this.tagData.push(tagList.data().tagData);
+				//	localStorage.setItem('TagsData', JSON.stringify(this.tagData));
+				//	console.log("fetchTagsData Success");
+				//} catch (error) {
+				//	console.error("Error fetching tags data:", error);
+				//}
+
+				try {
+					let tagList = await this.dbQuery("Tags", "MangaSetting");
+					//將讀取到的attribute種類添加到tagType
+					const attributes = new Set(Object.values(tagList.data()).map(obj => obj.attribute));
+					this.tagType = Array.from(attributes).sort((a, b) => a.localeCompare(b));
+					//將讀取到的tagList轉為array照id順序保存
+					const array = Object.entries(tagList.data()).map(([key, value]) => {
+						const id = key.padStart(3, '0');
+						return { id, ...value };
+					});
+					// 依照讀取到sequence進行排序並存入tagData
+					this.tagData = array.sort((a, b) => a.sequence - b.sequence);
+					//本地化儲存
+					localStorage.setItem('TagsData', JSON.stringify(this.tagData));
+					console.log("fetchTagsData Success");
+				} catch (error) {
+					console.error("Error fetching tags data:", error);
+				}
 			},
 
-			async downloadImagesInOrder(imagePathsId) {
-				if (imagePathsId.length === 0) {
-					return Promise.resolve();
+			async fetchImagesData() {
+				try {
+					const keys = Object.keys(this.mangaData);
+					//console.log(keys)
+					for (let i = 0; i < keys.length; i++) {
+						const imagePath = 'Manga/' + keys[i] + '.jpg';
+						thisApp.urlData[keys[i]] = await this.getImage(imagePath);
+					}
+					localStorage.setItem('ImagesData', JSON.stringify(this.urlData));
+					console.log("fetchImagesData Success");
+				} catch (error) {
+					console.error("Error fetching Images data:", error);
 				}
+			},
 
-				const imagePath = this.getImagePaths(imagePathsId[0]);
-				this.urlData[imagePathsId[0]] = await this.getImage(imagePath)
-
-				return this.downloadImagesInOrder(imagePathsId.slice(1));
+			async checkFirestoreData(cachedMangaData) {
+				await this.fetchMangasData();
+				if (cachedMangaData != JSON.stringify(this.mangaData)) {
+					await this.fetchTagsData();
+					await this.fetchImagesData();
+				} else {
+				}
 			},
 
 			updateHiddenTagList(value) {
 				const index = this.tagList.indexOf(value);
 				const hideIndex = this.hiddenTagList.indexOf(value);
 
-				switch (this.searchMode){
+				switch (this.searchMode) {
 					case 1:
 						if (hideIndex !== -1) {
 							this.hiddenTagList.splice(hideIndex, 1);
@@ -339,28 +422,29 @@
 								this.hiddenTagList.push(value);
 							}
 						}
-						else{
+						else {
 							this.hiddenTagList.push(value);
 						}
 						break;
 				}
 			},
 
+			formatTags(tags) {
+				let tagsString = [];
+				for (tag of tags){
+					const filteredData = this.tagData.filter(obj => obj.id === tag).map(obj => obj.name);
+					tagsString.push(filteredData);
+				}
+				return tagsString.join(', ');
+			},
+
 			selectAllTags() {
 				this.hiddenTagList = [];
-				this.tagList = this.getAllTags();
+				this.tagList = this.tagData.map(obj => obj.id);
 			},
 			clearAllTags() {
 				this.tagList = [];
 				this.hiddenTagList = [];
-			},
-			getAllTags() {
-				const allTags = [];
-				for (const type of this.tagType[0]) {
-					const tags = this.filteredTags(type);
-					allTags.push(...tags);
-				}
-				return allTags;
 			},
 		},
 		watch: {
@@ -370,7 +454,8 @@
 			}
 		},
 		async mounted() {
-			this.fetchMangaData();
+			//this.fetchMangasData();
+			this.getFirestoreData();
 		}
 	}
 	var formComponent = Vue.createApp(component)
