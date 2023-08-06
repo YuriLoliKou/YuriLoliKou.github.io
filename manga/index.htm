@@ -14,6 +14,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/vue@3.2.45/dist/vue.global.prod.js" type="text/javascript"></script>
+    <script src="https://unpkg.com/lodash@4.17.21/lodash.min.js"></script>
     <script src="/lib/Sortable/Sortable.min.js?v=triwwTQbab50G53J2FyiXb7JlioSKMdmFfzZ1rel42Y"></script>
     <script src="/lib/vue/vuedraggable.umd.min.js?v=Lw1ELK88FKeUDXLNnLnHq0i7DjoaZVc2XqGnomXivjU"></script>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
@@ -35,20 +36,34 @@
                     dbAssembly: {
                         ready: false,
                     },
+                    authIsEnd: false,
+                    isLoginFlag: false,
+                    adminAccount: false,
+                    myUid: "",
                 }
             },
             beforeCreate() {
                 thisApp = this
             },
             created() {
-                thisApp.setHeadTitle(thisApp.pageTitle)
+                thisApp.setHeadTitle(thisApp.pageTitle);
+            },
+            async mounted() {
+                const uid = await this.isLogin();
+                this.myUid = uid;
+                if (uid) {
+                    this.isLoginFlag = true;
+                    const uidRef =await this.dbQuery("users", uid);
+                    this.adminAccount = uidRef.exists();
+                }
+                this.authIsEnd = true;
             },
             computed: {
             },
             methods: {
                 firestoreInit: function () {
                     return new Promise((resolve, reject) => {
-                        import("/js/firestore.js?v=1.0.04")
+                        import("/js/firestore.js?v=1.0.06")
                             .then(module => {
                                 thisApp.dbAssembly = module.dbAssembly;
                                 resolve(true);
@@ -86,9 +101,17 @@
                     let { db, doc, deleteDoc } = await thisApp.getDbAssembly();
                     return await deleteDoc(doc(db, collectionName, docId));
                 },
+                isLogin: async function () {
+                    let { isLogin } = await thisApp.getDbAssembly();
+                    return await isLogin();
+                },
                 signIn: async function () {
                     let { googleSignIn } = await thisApp.getDbAssembly();
                     return await googleSignIn();
+                },
+                accountSignOut: async function () {
+                    let { accountSignOut } = await thisApp.getDbAssembly();
+                    await accountSignOut();
                 },
                 signInWithEmail: async function (email, password) {
                     let { emailSignIn } = await thisApp.getDbAssembly();
@@ -133,6 +156,15 @@
                         <li class="nav-item me-3 px-2">
                             <a class="nav-link text-dark" href="/manga">百合漫畫區</a>
                         </li>
+                        <li v-show="adminAccount" class="nav-item me-3 px-2">
+                            <a class="nav-link text-dark" href="/adminConsole">管理區</a>
+                        </li>
+                    </ul>
+                    <ul class="navbar-nav flex-grow-1" style="justify-content: flex-end">
+                        <li v-show="authIsEnd" class="nav-item me-3 px-2">
+                            <div v-if="!isLoginFlag" class="nav-link text-dark" @click="signIn()" style="cursor:pointer">登入</div>
+                            <div v-if="isLoginFlag" class="nav-link text-dark" @click="accountSignOut()" style="cursor:pointer">登出</div>
+                        </li>
                     </ul>
                 </div>
             </div>
@@ -164,12 +196,22 @@
 					<label class="form-check-label" for="MatchRadios2">完全符合</label>
 				</div>
 			</div>
+			<div style="display: flex; align-self: center; margin-left: auto;">
+				<span>
+					共 <span style="color: deepskyblue;">{{ visibleCount }}</span> 筆百合
+				</span>
+			</div>
 		</div>
+
 
 		<div class="d-block"></div>
 
 		<div style="box-shadow: inset 1px 1px 3px 0px #aaa; border-radius: 5px; padding: 0.5em; margin: 0 -0.5em;">
+
 			<div class="input-group mb-3" style="z-index: 0;">
+				<span class="tagEdit" :style="{top:'10px', right:'10px', 'font-size':'15px'}" @click="showModal(1)" v-show="isLoadCustomizationData">
+					<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z" /></svg>
+				</span>
 				<div class="input-group-prepend me-3">
 					<label class="input-group-text" for="inputGroupSelect01">標籤操作</label>
 				</div>
@@ -183,7 +225,7 @@
 						@click="searchMode = 2">
 					排除模式
 				</button>
-				<span v-show="searchMode == 2" class="ms-2 text-danger fw-bold" style="align-self: center;">排除模式:點擊標籤可排除該特定資料(自己改)</span>
+				<span v-show="searchMode == 2" class="ms-2 text-danger fw-bold" style="align-self: center;">排除模式:點擊標籤可排除包含此標籤的資料</span>
 			</div>
 
 			<div class="form-check-inline mb-2">
@@ -193,24 +235,68 @@
 				<button class="btn btn-outline-dark btn-sm" @click="clearAllTags">全部清除</button>
 			</div>
 
-			<template v-for="type in tagType">
+			<template v-for="type in tagType" :key="'tagType' + type">
 				<div class="d-block"></div>
-				<template v-for="key of filteredTags(type)">
+				<template v-for="key of filteredTags(type)" :key="'filteredTags' + key">
 					<div class="form-check form-check-inline">
 						<input v-model="tagList" :value="key.id" class="form-check-input" type="checkbox" :id="'tagCheckbox' + key.name" @change="updateHiddenTagList(key.id)">
 						<label class="form-check-label" :class="{ 'strikethrough': isTagChecked(key.id) }" :for="'tagCheckbox' + key.name">{{ key.name }}</label>
 					</div>
 				</template>
 			</template>
+
+			<!-- 自定義標籤 -->
+			<div v-for="(t, i) in dynamicTagsOptions" :key="'dynamicTagsOptions' + t + i">
+				<div class="d-block"></div>
+				<div v-for="(tag, index) in filteredDynamicTag(t.value)" :key="'customizationTags' + index" :style="{ color: tag.color }" class="dynamicTags form-check form-check-inline">
+					<input v-model="dynamicTagList" :value="tag.id" class="form-check-input" type="checkbox" :id="'tagCheckbox' + i * 100 + index" @change="updateHiddenTagList(tag.id)">
+					<label class="form-check-label" :class="{ 'strikethrough': isTagChecked(tag.id) }" :for="'tagCheckbox' + i * 100 + index">{{ tag.label }}</label>
+
+				</div>
+			</div>
 		</div>
 	</div>
 </div>
 
 
-<div v-for="([key, v], i) in Object.entries(mangaData)" v-show="hasIntersection(v.tags, tagList)">
+<div v-for="([key, v], i) in Object.entries(mangaData)" :key="key" v-show="hasIntersection(v.tags, tagList, key)">
 	<div class="card shadow-sm mb-3">
-		<div class="card-body">
-			<div class="row align-items-center">
+
+		<span class="tagEdit" @click="showModal(2, key)" v-show="isLoadCustomizationData && !isBookmark(key)">
+			<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 384 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M0 48C0 21.5 21.5 0 48 0l0 48V441.4l130.1-92.9c8.3-6 19.6-6 27.9 0L336 441.4V48H48V0H336c26.5 0 48 21.5 48 48V488c0 9-5 17.2-13 21.3s-17.6 3.4-24.9-1.8L192 397.5 37.9 507.5c-7.3 5.2-16.9 5.9-24.9 1.8S0 497 0 488V48z" /></svg>
+		</span>
+		<span class="tagEdit" @click="showModal(2, key)" v-show="isLoadCustomizationData && isBookmark(key)">
+			<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 384 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M0 48V487.7C0 501.1 10.9 512 24.3 512c5 0 9.9-1.5 14-4.4L192 400 345.7 507.6c4.1 2.9 9 4.4 14 4.4c13.4 0 24.3-10.9 24.3-24.3V48c0-26.5-21.5-48-48-48H48C21.5 0 0 21.5 0 48z" /></svg>
+		</span>
+
+
+		<div class="card-body" :style="dynamicTagsBackgroundStyle(key)" style="borderRadius: 5px;">
+			<div v-for="(dTag, dIndex) in keyTotalCountInDynamicTags(key)" :key="'cardDesign' + key">
+				<div :style="{
+						width: 'calc(100% - ' + (4 * dIndex) + 'px)',
+					    height: 'calc(100% - ' + (4 * dIndex) + 'px)',
+					    position: 'absolute',
+						borderRadius: Math.max(0, 5 - 3 * dIndex) + 'px',
+					    top: 0 + 2 * dIndex + 'px',
+					    left: 0 + 2 * dIndex + 'px',
+					    border: dTag.color + ' 2px solid',
+						pointerEvents: 'none' }">
+				</div>
+			</div>
+			<div :style="{
+						width: '100%',
+					    height: '100%',
+					    position: 'absolute',
+						borderRadius: '5px',
+					    top: '0px',
+					    left: '0px',
+					    backgroundColor: 'blue',
+						'z-index': '-1',
+						pointerEvents: 'none' }">
+			</div>
+
+			
+			<div class="row align-items-center" style="z-index: 2;">
 				<div class="col-3 col-sm-2 col-lg-1">
 					<img :src="urlData[key]" alt="" style="max-height: 100px; max-width: 50px;" />
 				</div>
@@ -230,8 +316,113 @@
 				</div>
 			</div>
 		</div>
+		
+
+
+
+
 	</div>
 </div>
+
+<!-- 彈出視窗 -->
+<div v-if="showPopup" class="modal">
+	<div class="modal-content">
+		<span class="close" @click="hideModal">&times;</span>
+		<!-- 標籤管理 -->
+		<div v-if="popupCondition == 1">
+			<h2>設定</h2>
+			<nav>
+				<div class="nav nav-tabs" id="nav-tab" role="tablist">
+					<button class="nav-link active" id="nav-add-tab" data-bs-toggle="tab" data-bs-target="#nav-add" type="button" role="tab" aria-controls="nav-add" aria-selected="true">
+						<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M0 80V229.5c0 17 6.7 33.3 18.7 45.3l176 176c25 25 65.5 25 90.5 0L418.7 317.3c25-25 25-65.5 0-90.5l-176-176c-12-12-28.3-18.7-45.3-18.7H48C21.5 32 0 53.5 0 80zm112 32a32 32 0 1 1 0 64 32 32 0 1 1 0-64z" /></svg>
+						標籤管理
+					</button>
+					<button class="nav-link" id="nav-profile-tab" data-bs-toggle="tab" data-bs-target="#nav-profile" type="button" role="tab" aria-controls="nav-profile" aria-selected="false">2</button>
+					<button class="nav-link" id="nav-contact-tab" data-bs-toggle="tab" data-bs-target="#nav-contact" type="button" role="tab" aria-controls="nav-contact" aria-selected="false">3</button>
+				</div>
+			</nav>
+			<div class="tab-content" id="nav-tabContent">
+				<div class="tab-pane fade show active" id="nav-add" role="tabpanel" aria-labelledby="nav-add-tab" tabindex="0">
+					<div class="mt-3">
+						<lable class="badge rounded-pill text-bg-primary fs-6 fw-bold">新增標籤</lable>
+					</div>
+					<div class="row mt-3">
+						<div class="col-auto d-flex pe-0 pt-2 pb-2">
+							<input type="text" class="me-2" v-model="newTagLabel" @keyup.enter="addTag" placeholder="新增自定義標籤">
+							<div v-for="option in dynamicTagsOptions" :key="option.value" style="display: flex; align-items: center;">
+								<input class="me-2" type="radio"
+									   :id="option.value"
+									   :value="option.value"
+									   name="dynamicTagsOptions"
+									   v-model="selectedDynamicTagType" />
+								<label class="me-2" :for="option.value">{{ option.label }}</label>
+							</div>
+						</div>
+						<div class="col-auto" style="display: flex; align-items: center;">
+							<input type="color" class="me-2" @input="updateNewTagColor($event.target.value)">
+							<button type="button" class="btn btn-info btn-sm me-2" @click="addTag" :disabled="!selectedDynamicTagType || !newTagLabel">新增</button>
+						</div>
+					</div>
+
+					<div class="mt-3">
+						<lable class="badge rounded-pill text-bg-success fs-6 fw-bold">編輯標籤</lable>
+					</div>
+					<div class="form-field-optionList">
+						<div v-for="(t, i) in dynamicTagsTemp" :key="'dynamicTags' + t + i" style="padding-left: 15px; padding-right: 15px;">
+							<div class="card border-success row mt-3">
+								<div class="row">
+									<div class="col-auto d-flex pe-0 pt-2 pb-2">
+										<input type="text" class="me-2" style="width: 100px; height: 30px;" v-model="t.label">
+										<div v-for="option in dynamicTagsOptions" :key="option.value + i" style="display: flex; align-items: center;">
+											<input class="me-2" type="radio"
+												   :id="option.value + i"
+												   :value="option.value"
+												   :name="dynamicTagsOptions + i"
+												   v-model="t.type" />
+											<label class="me-2" :for="option.value + i">{{ option.label }}</label>
+										</div>
+									</div>
+									<div class="col-auto pt-2 pb-2" style="display: flex; align-items: center;">
+										<input type="color" class="me-2" :value="t.color" @input="updateTagColor(i, $event.target.value)">
+									</div>
+									<div class="col pt-2 pb-2" style="display: flex; align-items: center; justify-content: flex-end;">
+										<button type="button" class="btn btn-danger btn-sm me-2" @click="removeTag(i)">刪除</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="mt-3">
+						<button type="button" class="btn btn-info btn-sm me-2" @click="updateTag()" :disabled="isTagsTempEqualToTags">保存修改</button>
+					</div>
+				</div>
+			</div>
+			<div class="tab-pane fade" id="nav-profile" role="tabpanel" aria-labelledby="nav-profile-tab" tabindex="0">
+			</div>
+			<div class="tab-pane fade" id="nav-contact" role="tabpanel" aria-labelledby="nav-contact-tab" tabindex="0">
+			</div>
+		</div>
+
+		<!-- 標籤追加 -->
+		<div v-if="popupCondition == 2">
+			<span class="close" @click="hideModal">&times;</span>
+			<h2>加入標籤</h2>
+			<div v-for="(t, i) in dynamicTagsOptions" :key="'dynamicTagsOptions' + t + i">
+				<div class="d-block"></div>
+				<div v-for="(tag, index) in filteredDynamicTagTemp(t.value)" :key="'addDynamicTags' + tag + index" :style="{ color: tag.color }" class="dynamicTags form-check form-check-inline">
+					<div class="d-block"></div>
+					<input v-model="tag.tagList" :value="addDynamicTagIdTemp" class="form-check-input" type="checkbox" :id="'addDynamicTagCheckbox' + tag.id" @change="updateHiddenTagList(tag.id)">
+					<label class="form-check-label" :for="'addDynamicTagCheckbox' + tag.id">{{ tag.label }}</label>
+				</div>
+			</div>
+			<div class="mt-3">
+				<button type="button" class="btn btn-info btn-sm me-2" @click="updateTag()" :disabled="isTagsTempEqualToTags">保存修改</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 
 
 <script>
@@ -241,22 +432,72 @@
 			return {
 				pageTitle: '百合漫畫區',
 				mangaData: {},
-				tagList: ['001', '002', '003', '020',],
+				tagList: ['001', '002', '003', '005', '020',],
 				hiddenTagList: [],
+				dynamicTagList: [],
+				dynamicHiddenTagList: [],
 				//selectedOption: "show",
 				searchType: "partial",
 				searchMode: 1,
 				tagType: [],
 				tagData: [],
 				urlData: {},
+
+				dynamicTags: [],
+				dynamicTagsTemp: [],
+				newTagLabel: '',
+				newTagColor: '#000000',
+				selectedDynamicTagType: 'frame', // 自定義標籤類型
+				dynamicTagsOptions: [
+					{ value: 'frame', label: '外框' },
+					{ value: 'card', label: '卡片' },
+				],
+				isLoadCustomizationData: false,
+				addDynamicTagIdTemp: '',
+
+				showPopup: false,
+				popupCondition: '',
 			}
 		},
 		created() {
 		},
 		computed: {
+			visibleCount() {
+				return Object.entries(this.mangaData).reduce((count, [key, v]) => {
+					return count + (this.hasIntersection(v.tags, this.tagList, key) ? 1 : 0);
+				}, 0);
+			},
+
 			isTagChecked() {
 				return (value) => {
-					return this.hiddenTagList.includes(value);
+					//let filteredData;
+					//switch (this.searchType) {
+					//	case "partial":
+					//		filteredData = Object.values(this.mangaData).filter(item =>
+					//			item.tags.some(tag => this.tagList.includes(tag)) &&
+					//			!this.hiddenTagList.some(hiddenTag => item.tags.includes(hiddenTag))
+					//		);
+
+					//		this.dataCount = filteredData.length;
+					//		break;
+					//	case "exact":
+					//		if (this.tagList.length > 0){
+					//			filteredData = Object.values(this.mangaData).filter(item =>
+					//				this.tagList.every(tag => item.tags.includes(tag)) &&
+					//				!this.hiddenTagList.some(hiddenTag => item.tags.includes(hiddenTag))
+					//			);
+
+					//			this.dataCount = filteredData.length;
+					//		}else{
+					//			this.dataCount = 0;
+					//		}
+					//		break;
+					//}
+					if (value < 9999) {
+						return this.hiddenTagList.includes(value);
+					} else {
+						return this.dynamicHiddenTagList.includes(value);
+					}
 				}
 			},
 
@@ -276,25 +517,67 @@
 					//}
 				};
 			},
+
+			isTagsTempEqualToTags() {
+				return JSON.stringify(this.dynamicTagsTemp) === JSON.stringify(this.dynamicTags);
+			}
 		},
 		methods: {
-			hasIntersection: function (ItemTags, tagList) {
+			hasIntersection: function (ItemTags, tagList, id) {
 				//預設全選
 				//if (tagList.length === 0) {
 				//    return !this.hiddenTagList.some((tag) => ItemTags.includes(tag));
 				//}
 				//console.log("hasIntersection");
+				if (tagList.length <= 0 && this.dynamicTagList <= 0) { return false; }
 
-				for (let i = 0; i < tagList.length; i++) {
-					switch (this.searchType) {
-						case "partial":
-							return tagList.some((tag) => ItemTags.includes(tag)) && !this.hiddenTagList.some((tag) => ItemTags.includes(tag));
-							break;
-						case "exact":
-							return tagList.every((tag) => ItemTags.includes(tag)) && !this.hiddenTagList.some((tag) => ItemTags.includes(tag));
-							break;
-					}
+				let found = false;
+
+				switch (this.searchType) {
+
+					case "partial":
+						found = tagList.some((tag) => ItemTags.includes(tag)) && !this.hiddenTagList.some((tag) => ItemTags.includes(tag));
+
+						for (const item of this.dynamicTags) {
+							if (this.dynamicHiddenTagList.includes(item.id)) {
+								if (item.tagList.includes(id)) {
+									found = false;
+									break;
+								}
+							}
+							if (this.dynamicTagList.includes(item.id)) {
+								if (item.tagList.includes(id) && !this.hiddenTagList.some((tag) => ItemTags.includes(tag))) {
+									found = true;
+								}
+							}
+						}
+
+						break;
+					case "exact":
+						found = tagList.every((tag) => ItemTags.includes(tag)) && !this.hiddenTagList.some((tag) => ItemTags.includes(tag));
+						if (!found) { break; }
+
+						for (const item of this.dynamicTags) {
+							if (this.dynamicHiddenTagList.includes(item.id)) {
+								if (item.tagList.includes(id)) {
+									found = false;
+									break;
+								}
+							}
+							if (this.dynamicTagList.includes(item.id)) {
+								if (item.tagList.includes(id) && tagList.every((tag) => ItemTags.includes(tag))) {
+									found = true;
+								}
+								else {
+									found = false;
+									break;
+								}
+							}
+						}
+
+						break;
 				}
+				return found;
 			},
 
 			async getFirestoreData() {
@@ -324,13 +607,15 @@
 					await this.fetchImagesData();
 				}
 
+				//圖片載完再儲存
+				localStorage.setItem('MangasData', JSON.stringify(this.mangaData));
 				if (!firstLoad) { await this.checkFirestoreData(cachedMangaData); }
 			},
 
 			async fetchMangasData() {
 				try {
 					//let mangaList = await this.dbQuery("Manga");
-					//for (let i = 0; i < mangaList.docs.length; i++) {	
+					//for (let i = 0; i < mangaList.docs.length; i++) {
 					//	let doc = mangaList.docs[i];
 					//	thisApp.mangaData[doc.id] = doc.data();
 					//}
@@ -340,7 +625,7 @@
 					const jsonString = mangaList.data().jsonString;
 					const jsonData = JSON.parse(jsonString);
 					this.mangaData = jsonData;
-					localStorage.setItem('MangasData', JSON.stringify(this.mangaData));
+					//localStorage.setItem('MangasData', JSON.stringify(this.mangaData));
 					console.log("fetchMangasData Success");
 				} catch (error) {
 					console.error("Error fetching mangas data:", error);
@@ -398,32 +683,59 @@
 				if (cachedMangaData != JSON.stringify(this.mangaData)) {
 					await this.fetchTagsData();
 					await this.fetchImagesData();
+					localStorage.setItem('MangasData', JSON.stringify(this.mangaData));
 				} else {
 				}
 			},
 
+			async fetchCustomizationData() {
+				let customizationData = await this.dbQuery("Customization", this.myUid);
+				if (customizationData.exists()) {
+					const tagData = customizationData.data().tag;
+					// 將 formData.tag 轉換為鍵值對的陣列，並進行排序
+					const sortedArray = Object.entries(tagData).sort((a, b) => a[0] - b[0]);
+					// 最後再轉換為需要的格式
+					this.dynamicTags = sortedArray.map(([key, value]) => ({ id: Number(key), ...value }));
+				}
+
+				this.isLoadCustomizationData = true;
+			},
+
 			updateHiddenTagList(value) {
-				const index = this.tagList.indexOf(value);
-				const hideIndex = this.hiddenTagList.indexOf(value);
+				let index;
+				let hideIndex;
+				let tagListTemp;
+				let hiddenTagListTemp;
+				if (value < 9999) {
+					tagListTemp = this.tagList;
+					hiddenTagListTemp = this.hiddenTagList;
+					index = this.tagList.indexOf(value);
+					hideIndex = this.hiddenTagList.indexOf(value);
+				} else {
+					tagListTemp = this.dynamicTagList;
+					hiddenTagListTemp = this.dynamicHiddenTagList;
+					index = this.dynamicTagList.indexOf(value);
+					hideIndex = this.dynamicHiddenTagList.indexOf(value);
+				}
 
 				switch (this.searchMode) {
 					case 1:
 						if (hideIndex !== -1) {
-							this.hiddenTagList.splice(hideIndex, 1);
+							hiddenTagListTemp.splice(hideIndex, 1);
 						}
 						break;
 					case 2:
 						if (index !== -1) {
-							this.tagList.splice(index, 1);
+							tagListTemp.splice(index, 1);
 							if (hideIndex != -1) {
-								this.hiddenTagList.splice(hideIndex, 1);
+								hiddenTagListTemp.splice(hideIndex, 1);
 							}
 							else {
-								this.hiddenTagList.push(value);
+								hiddenTagListTemp.push(value);
 							}
 						}
 						else {
-							this.hiddenTagList.push(value);
+							hiddenTagListTemp.push(value);
 						}
 						break;
 				}
@@ -431,7 +743,7 @@
 
 			formatTags(tags) {
 				let tagsString = [];
-				for (tag of tags){
+				for (tag of tags) {
 					const filteredData = this.tagData.filter(obj => obj.id === tag).map(obj => obj.name);
 					tagsString.push(filteredData);
 				}
@@ -441,17 +753,142 @@
 			selectAllTags() {
 				this.hiddenTagList = [];
 				this.tagList = this.tagData.map(obj => obj.id);
+				this.dynamicHiddenTagList = [];
+				this.dynamicTagList = this.dynamicTags.map((tag, index) => 9999 + index);
 			},
 			clearAllTags() {
 				this.tagList = [];
 				this.hiddenTagList = [];
+				this.dynamicTagList = [];
+				this.dynamicHiddenTagList = [];
+			},
+			//自定義標籤
+			async addTag() {
+				if (this.newTagLabel) {
+					//const tagIndex = this.dynamicTags.findIndex(tag => tag.label === this.newTagLabel);
+					//if (tagIndex !== -1) {
+					//	this.dynamicTags[tagIndex].color = this.newTagColor;
+					//}
+					this.dynamicTags.push({ label: this.newTagLabel, color: this.newTagColor, type: this.selectedDynamicTagType, tagList: [] });
+					this.dynamicTagsTemp = JSON.parse(JSON.stringify(this.dynamicTags));
+					this.newTagLabel = '';
+
+					const formData = {
+						tag: {}
+					};
+					for (let i = 0; i < this.dynamicTags.length; i++) {
+						const tagId = 9999 + i; // 以 9999 加上索引 i 作為每個標籤的唯一 ID
+						formData.tag[tagId] = {
+							label: this.dynamicTags[i].label,
+							color: this.dynamicTags[i].color,
+							type: this.dynamicTags[i].type,
+							tagList: this.dynamicTags[i].tagList
+						};
+					}
+					const docRef = await this.dbInsert("Customization", formData, this.myUid)
+						.catch(error => {
+							this.dynamicTags.pop();
+							this.dynamicTagsTemp.pop();
+							alert("新增標籤失敗!");
+						});
+				}
+			},
+			async updateTag() {
+				const formData = {
+					tag: {}
+				};
+				for (let i = 0; i < this.dynamicTagsTemp.length; i++) {
+					const tagId = 9999 + i; // 以 9999 加上索引 i 作為每個標籤的唯一 ID
+					formData.tag[tagId] = {
+						label: this.dynamicTagsTemp[i].label,
+						color: this.dynamicTagsTemp[i].color,
+						type: this.dynamicTagsTemp[i].type,
+						tagList: this.dynamicTagsTemp[i].tagList
+					};
+				}
+				const docRef = await this.dbInsert("Customization", formData, this.myUid)
+					.catch(error => {
+						alert("更新失敗!");
+						return;
+					});
+				this.dynamicTags = this.dynamicTagsTemp;
+				this.hideModal();
+			},
+			removeTag(index) {
+				this.dynamicTagsTemp.splice(index, 1);
+			},
+			updateNewTagColor(color) {
+				this.newTagColor = color;
+			},
+			updateTagColor: _.debounce(function (index, color) {
+				this.dynamicTagsTemp[index].color = color;
+				console.log(this.dynamicTagsTemp)
+			}, 300),
+			filteredDynamicTag(tag) {
+				return this.dynamicTags.filter(t => t.type === tag);
+			},
+			filteredDynamicTagTemp(tag) {
+				return this.dynamicTagsTemp.filter(t => t.type === tag);
+			},
+			keyTotalCountInDynamicTags(id) {
+				return this.dynamicTags.filter(tag => tag.tagList.includes(id) && tag.type === 'frame');
+			},
+			dynamicTagsBackgroundStyle(id){
+				if (this.dynamicTags.length <= 0) { return null; }
+
+				const cardTags = this.dynamicTags.filter(tag => tag.tagList.includes(id) && tag.type === 'card');
+				let gradientColors = cardTags.map(tag => tag.color).join(', ');
+				
+				// 如果沒有顏色，指定兩個相同的預設顏色
+				if (cardTags.length === 0) {
+					gradientColors = 'white, white'
+				}
+				// 如果只有一個顏色，就將其重複一次
+				if (cardTags.length === 1) {
+					gradientColors = `${gradientColors}, ${gradientColors}`
+				}
+
+				return {
+					backgroundImage: `linear-gradient(to right, ${gradientColors})`,
+				};
+			},
+			isBookmark(id) {
+				let isExist = false;
+				for (tag of this.dynamicTags) {
+					if (tag.tagList.includes(id)) {
+						isExist = true;
+					}
+				}
+				return isExist;
+			},
+			//彈出視窗
+			showModal(condition, id = null) {
+				this.popupCondition = condition;
+				if (condition == 1) {
+					this.dynamicTagsTemp = JSON.parse(JSON.stringify(this.dynamicTags));
+				}
+
+				if (id != null) {
+					this.dynamicTagsTemp = JSON.parse(JSON.stringify(this.dynamicTags));
+					this.addDynamicTagIdTemp = id;
+				}
+
+				this.showPopup = true;
+			},
+			hideModal() {
+				this.showPopup = false;
 			},
 		},
 		watch: {
 			tagList(nv, ov) {
 			},
 			searchType(nv, ov) {
-			}
+			},
+			isLoginFlag(newVal) {
+				if (newVal === true) {
+					this.fetchCustomizationData();
+				}
+			},
 		},
 		async mounted() {
 			//this.fetchMangasData();

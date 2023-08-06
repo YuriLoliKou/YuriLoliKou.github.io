@@ -1,6 +1,6 @@
 ﻿// Import the functions you need from the SDKs you need
 //import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-analytics.js";
-import { getAuth, signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js'
+import { getAuth, signOut, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js'
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
 import { getFirestore, collection, setDoc, addDoc, getDoc, getDocs, deleteDoc, doc, query, where, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 import { getStorage, ref, getDownloadURL, uploadBytes, deleteObject } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-storage.js";
@@ -26,6 +26,19 @@ const auth = getAuth();
 const provider = new GoogleAuthProvider();
 const storage = getStorage();
 
+async function isLogin() {
+    return new Promise((resolve, reject) => {
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                const uid = user.uid;
+                resolve(uid);
+            } else {
+                resolve(false);
+            }
+        });
+    });
+}
+
 async function googleSignIn() {
     let result;
 
@@ -36,10 +49,18 @@ async function googleSignIn() {
             const user = res.user;
 
             result = { credential, token, user }
-
+            location.reload();
         }).catch((error) => { console.log(error) });
 
     return result;
+}
+
+async function accountSignOut() {
+    const auth = getAuth();
+    signOut(auth).then(() => {
+        location.reload();
+    }).catch((error) => {
+    });
 }
 
 async function emailSignIn(email, password) {
@@ -102,5 +123,5 @@ async function deleteImage(fileName) {
 
 export const dbAssembly = {
     ready: true,
-    db, collection, setDoc, addDoc, getDoc, getDocs, deleteDoc, doc, query, where, updateDoc, googleSignIn, emailSignIn, signInWithEmailAndPassword, createUserWithEmailAndPassword, getImage, uploadImage, deleteImage
+    db, collection, setDoc, addDoc, getDoc, getDocs, deleteDoc, doc, query, where, updateDoc, accountSignOut, isLogin, googleSignIn, emailSignIn, signInWithEmailAndPassword, createUserWithEmailAndPassword, getImage, uploadImage, deleteImage
 }

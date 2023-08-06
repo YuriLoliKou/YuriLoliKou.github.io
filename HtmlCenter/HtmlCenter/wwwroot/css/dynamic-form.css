@@ -47,8 +47,8 @@
 .form-field-optionList {
     overflow-y: auto;
     overflow-x: hidden;
-    min-height: 50vh;
-    max-height: 50vh;
+    min-height: 25vh;
+    max-height: 25vh;
     display: block;
 }
 

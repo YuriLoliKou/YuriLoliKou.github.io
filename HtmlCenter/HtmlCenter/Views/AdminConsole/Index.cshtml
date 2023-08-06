@@ -129,6 +129,7 @@
 				savedMangaData:{},
 				savedMangaImage:{},
 				tagData: [],
+				isEventHandlerRegistered: false,
 
 				manga_name: '',
 				manga_originalName: '',
@@ -199,26 +200,31 @@
 		},
 		methods: {
 			loadAddedMangasData() {
-				this.savedMangaData = JSON.parse(localStorage.getItem('AddedMangasData'));
+				const AddedMangasData = localStorage.getItem('AddedMangasData');
+				const AddedMangasImage = localStorage.getItem('AddedMangasImage');
+
+				if (AddedMangasData) {
+					this.savedMangaData = JSON.parse(AddedMangasData);
+				}
+				if (AddedMangasImage) {
+					this.AddedMangasImage = JSON.parse(AddedMangasImage);
+				}
 			},
 
 			async submitMangaForm() {
 				let addedId = '';
+
+				this.manga_tags.sort(function (a, b) {
+					return a - b;
+				});
+
 				try {
-					const formData = {
-						name: this.manga_name,
-						originalName: this.manga_originalName,
-						author: this.manga_author,
-						originalAuthor: this.manga_originalAuthor,
-						tags: this.manga_tags,
-					};
 					//const formDataJson = JSON.stringify(this.savedMangaData[this.manga_id]);
 					//const formDataObj = JSON.parse(formDataJson);
 					
 					//選擇圖片
 					const fileInput = document.getElementById('fileInput');
-					fileInput.click();
-					fileInput.addEventListener('change', async e => {
+					const handleFileChange = async (e) => {
 						this.manga_show = true;
 
 						const file = e.target.files[0];
@@ -229,6 +235,13 @@
 								this.showMessage('manga_message', 'manga_success', false, "請選擇jpg檔!!", 3000);
 								return;
 							}
+							const formData = {
+								name: this.manga_name,
+								originalName: this.manga_originalName,
+								author: this.manga_author,
+								originalAuthor: this.manga_originalAuthor,
+								tags: this.manga_tags,
+							};
 							//新增資料進Firestore並取得ID後本地化儲存
 							const docRef = await this.dbInsert("Manga", formData);
 							addedId = docRef.id;
@@ -247,7 +260,7 @@
 							// 上傳圖片至 Firebase Cloud Storage
 							await this.uploadImage(file, fileName);
 							this.savedMangaImage[addedId] = await this.getImage(fileName);
-							localStorage.setItem('AddedMangaImage', JSON.stringify(this.savedMangaImage));
+							localStorage.setItem('AddedMangasImage', JSON.stringify(this.savedMangaImage));
 							this.manga_show = false;
 							this.clearFormMessage();
 							//輸出結果
@@ -257,7 +270,13 @@
 							this.manga_show = false;
 							this.showMessage('manga_message', 'manga_success', false, "請選擇圖片!!", 3000);
 						}
-					});
+					};
+
+					if (!this.isEventHandlerRegistered) {
+						fileInput.addEventListener('change', handleFileChange);
+						this.isEventHandlerRegistered = true;
+					}
+					fileInput.click();
 					
 				} catch (error) {
 					this.manga_show = false;
@@ -275,7 +294,7 @@
 					delete this.savedMangaData[Id];
 					localStorage.setItem('AddedMangasData', JSON.stringify(this.savedMangaData));
 					delete this.savedMangaImage[Id];
-					localStorage.setItem('AddedMangaImage', JSON.stringify(this.savedMangaImage));
+					localStorage.setItem('AddedMangasImage', JSON.stringify(this.savedMangaImage));
 					await this.dbDeleteDoc("Manga", Id);
 					const deletePath = "Manga/" + Id + '.jpg';
 					await this.deleteImage(deletePath);
@@ -344,7 +363,9 @@
 					});
 					//刪除本地新增的數據
 					this.savedMangaData = {};
+					this.savedMangaImage = {};
 					localStorage.setItem('AddedMangasData', JSON.stringify(this.savedMangaData));
+					localStorage.setItem('AddedMangasImage', JSON.stringify(this.savedMangaImage));
 					this.manga_json_show = false;
 					//輸出結果
 					this.showMessage('manga_json_message', 'manga_json_success', true, "Json資料更新成功!!", 1500);
@@ -366,7 +387,7 @@
 					//讀取Firestore數據將Json文字轉為物件
 					const mangaList = await this.dbQuery("Json", "Manga");
 					const jsonString = mangaList.data().jsonString;
-					console.log(jsonString)
+					//console.log(jsonString)
 					let jsonData = JSON.parse(jsonString);
 					//刪除Json文件內指定名稱的文件
 					const keys = Object.keys(jsonData);
@@ -446,13 +467,13 @@
 
 			formatTags(tags) {
 				let tagsString = [];
-				for (tag of tags) {
-					console.log(tag)
-					const filteredData = this.tagData.filter(obj => obj.id === tag).map(obj => obj.name);
-					console.log(filteredData)
-					tagsString.push(filteredData);
+				if (tags){
+					for (tag of tags) {
+						const filteredData = this.tagData.filter(obj => obj.id === tag).map(obj => obj.name);
+						//console.log(filteredData)
+						tagsString.push(filteredData);
+					}
 				}
-				console.log(tagsString.join(', '))
 				return tagsString.join(', ');
 			},
 

@@ -177,3 +177,44 @@ header {
 .text-center-self {
     align-self: center;
 }
+
+.modal {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1;
+}
+
+.modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 70%;
+    transform: translate(-50%, -50%);
+    background-color: aliceblue;
+    padding: 20px;
+    border-radius: 5px;
+}
+
+.close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.tagEdit {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 13px;
+    cursor: pointer;
+}

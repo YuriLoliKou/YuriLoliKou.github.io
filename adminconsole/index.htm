@@ -14,6 +14,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/vue@3.2.45/dist/vue.global.prod.js" type="text/javascript"></script>
+    <script src="https://unpkg.com/lodash@4.17.21/lodash.min.js"></script>
     <script src="/lib/Sortable/Sortable.min.js?v=triwwTQbab50G53J2FyiXb7JlioSKMdmFfzZ1rel42Y"></script>
     <script src="/lib/vue/vuedraggable.umd.min.js?v=Lw1ELK88FKeUDXLNnLnHq0i7DjoaZVc2XqGnomXivjU"></script>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
@@ -35,20 +36,34 @@
                     dbAssembly: {
                         ready: false,
                     },
+                    authIsEnd: false,
+                    isLoginFlag: false,
+                    adminAccount: false,
+                    myUid: "",
                 }
             },
             beforeCreate() {
                 thisApp = this
             },
             created() {
-                thisApp.setHeadTitle(thisApp.pageTitle)
+                thisApp.setHeadTitle(thisApp.pageTitle);
+            },
+            async mounted() {
+                const uid = await this.isLogin();
+                this.myUid = uid;
+                if (uid) {
+                    this.isLoginFlag = true;
+                    const uidRef =await this.dbQuery("users", uid);
+                    this.adminAccount = uidRef.exists();
+                }
+                this.authIsEnd = true;
             },
             computed: {
             },
             methods: {
                 firestoreInit: function () {
                     return new Promise((resolve, reject) => {
-                        import("/js/firestore.js?v=1.0.04")
+                        import("/js/firestore.js?v=1.0.06")
                             .then(module => {
                                 thisApp.dbAssembly = module.dbAssembly;
                                 resolve(true);
@@ -86,9 +101,17 @@
                     let { db, doc, deleteDoc } = await thisApp.getDbAssembly();
                     return await deleteDoc(doc(db, collectionName, docId));
                 },
+                isLogin: async function () {
+                    let { isLogin } = await thisApp.getDbAssembly();
+                    return await isLogin();
+                },
                 signIn: async function () {
                     let { googleSignIn } = await thisApp.getDbAssembly();
                     return await googleSignIn();
+                },
+                accountSignOut: async function () {
+                    let { accountSignOut } = await thisApp.getDbAssembly();
+                    await accountSignOut();
                 },
                 signInWithEmail: async function (email, password) {
                     let { emailSignIn } = await thisApp.getDbAssembly();
@@ -132,6 +155,15 @@
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item me-3 px-2">
                             <a class="nav-link text-dark" href="/manga">百合漫畫區</a>
+                        </li>
+                        <li v-show="adminAccount" class="nav-item me-3 px-2">
+                            <a class="nav-link text-dark" href="/adminConsole">管理區</a>
+                        </li>
+                    </ul>
+                    <ul class="navbar-nav flex-grow-1" style="justify-content: flex-end">
+                        <li v-show="authIsEnd" class="nav-item me-3 px-2">
+                            <div v-if="!isLoginFlag" class="nav-link text-dark" @click="signIn()" style="cursor:pointer">登入</div>
+                            <div v-if="isLoginFlag" class="nav-link text-dark" @click="accountSignOut()" style="cursor:pointer">登出</div>
                         </li>
                     </ul>
                 </div>
@@ -275,6 +307,7 @@
 				savedMangaData:{},
 				savedMangaImage:{},
 				tagData: [],
+				isEventHandlerRegistered: false,
 
 				manga_name: '',
 				manga_originalName: '',
@@ -345,26 +378,31 @@
 		},
 		methods: {
 			loadAddedMangasData() {
-				this.savedMangaData = JSON.parse(localStorage.getItem('AddedMangasData'));
+				const AddedMangasData = localStorage.getItem('AddedMangasData');
+				const AddedMangasImage = localStorage.getItem('AddedMangasImage');
+
+				if (AddedMangasData) {
+					this.savedMangaData = JSON.parse(AddedMangasData);
+				}
+				if (AddedMangasImage) {
+					this.AddedMangasImage = JSON.parse(AddedMangasImage);
+				}
 			},
 
 			async submitMangaForm() {
 				let addedId = '';
+
+				this.manga_tags.sort(function (a, b) {
+					return a - b;
+				});
+
 				try {
-					const formData = {
-						name: this.manga_name,
-						originalName: this.manga_originalName,
-						author: this.manga_author,
-						originalAuthor: this.manga_originalAuthor,
-						tags: this.manga_tags,
-					};
 					//const formDataJson = JSON.stringify(this.savedMangaData[this.manga_id]);
 					//const formDataObj = JSON.parse(formDataJson);
 					
 					//選擇圖片
 					const fileInput = document.getElementById('fileInput');
-					fileInput.click();
-					fileInput.addEventListener('change', async e => {
+					const handleFileChange = async (e) => {
 						this.manga_show = true;
 
 						const file = e.target.files[0];
@@ -375,6 +413,13 @@
 								this.showMessage('manga_message', 'manga_success', false, "請選擇jpg檔!!", 3000);
 								return;
 							}
+							const formData = {
+								name: this.manga_name,
+								originalName: this.manga_originalName,
+								author: this.manga_author,
+								originalAuthor: this.manga_originalAuthor,
+								tags: this.manga_tags,
+							};
 							//新增資料進Firestore並取得ID後本地化儲存
 							const docRef = await this.dbInsert("Manga", formData);
 							addedId = docRef.id;
@@ -393,7 +438,7 @@
 							// 上傳圖片至 Firebase Cloud Storage
 							await this.uploadImage(file, fileName);
 							this.savedMangaImage[addedId] = await this.getImage(fileName);
-							localStorage.setItem('AddedMangaImage', JSON.stringify(this.savedMangaImage));
+							localStorage.setItem('AddedMangasImage', JSON.stringify(this.savedMangaImage));
 							this.manga_show = false;
 							this.clearFormMessage();
 							//輸出結果
@@ -403,7 +448,13 @@
 							this.manga_show = false;
 							this.showMessage('manga_message', 'manga_success', false, "請選擇圖片!!", 3000);
 						}
-					});
+					};
+
+					if (!this.isEventHandlerRegistered) {
+						fileInput.addEventListener('change', handleFileChange);
+						this.isEventHandlerRegistered = true;
+					}
+					fileInput.click();
 					
 				} catch (error) {
 					this.manga_show = false;
@@ -421,7 +472,7 @@
 					delete this.savedMangaData[Id];
 					localStorage.setItem('AddedMangasData', JSON.stringify(this.savedMangaData));
 					delete this.savedMangaImage[Id];
-					localStorage.setItem('AddedMangaImage', JSON.stringify(this.savedMangaImage));
+					localStorage.setItem('AddedMangasImage', JSON.stringify(this.savedMangaImage));
 					await this.dbDeleteDoc("Manga", Id);
 					const deletePath = "Manga/" + Id + '.jpg';
 					await this.deleteImage(deletePath);
@@ -490,7 +541,9 @@
 					});
 					//刪除本地新增的數據
 					this.savedMangaData = {};
+					this.savedMangaImage = {};
 					localStorage.setItem('AddedMangasData', JSON.stringify(this.savedMangaData));
+					localStorage.setItem('AddedMangasImage', JSON.stringify(this.savedMangaImage));
 					this.manga_json_show = false;
 					//輸出結果
 					this.showMessage('manga_json_message', 'manga_json_success', true, "Json資料更新成功!!", 1500);
@@ -512,7 +565,7 @@
 					//讀取Firestore數據將Json文字轉為物件
 					const mangaList = await this.dbQuery("Json", "Manga");
 					const jsonString = mangaList.data().jsonString;
-					console.log(jsonString)
+					//console.log(jsonString)
 					let jsonData = JSON.parse(jsonString);
 					//刪除Json文件內指定名稱的文件
 					const keys = Object.keys(jsonData);
@@ -592,13 +645,13 @@
 
 			formatTags(tags) {
 				let tagsString = [];
-				for (tag of tags) {
-					console.log(tag)
-					const filteredData = this.tagData.filter(obj => obj.id === tag).map(obj => obj.name);
-					console.log(filteredData)
-					tagsString.push(filteredData);
+				if (tags){
+					for (tag of tags) {
+						const filteredData = this.tagData.filter(obj => obj.id === tag).map(obj => obj.name);
+						//console.log(filteredData)
+						tagsString.push(filteredData);
+					}
 				}
-				console.log(tagsString.join(', '))
 				return tagsString.join(', ');
 			},
 

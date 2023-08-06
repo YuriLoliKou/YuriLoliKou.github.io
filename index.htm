@@ -14,6 +14,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/vue@3.2.45/dist/vue.global.prod.js" type="text/javascript"></script>
+    <script src="https://unpkg.com/lodash@4.17.21/lodash.min.js"></script>
     <script src="/lib/Sortable/Sortable.min.js?v=triwwTQbab50G53J2FyiXb7JlioSKMdmFfzZ1rel42Y"></script>
     <script src="/lib/vue/vuedraggable.umd.min.js?v=Lw1ELK88FKeUDXLNnLnHq0i7DjoaZVc2XqGnomXivjU"></script>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
@@ -35,20 +36,34 @@
                     dbAssembly: {
                         ready: false,
                     },
+                    authIsEnd: false,
+                    isLoginFlag: false,
+                    adminAccount: false,
+                    myUid: "",
                 }
             },
             beforeCreate() {
                 thisApp = this
             },
             created() {
-                thisApp.setHeadTitle(thisApp.pageTitle)
+                thisApp.setHeadTitle(thisApp.pageTitle);
+            },
+            async mounted() {
+                const uid = await this.isLogin();
+                this.myUid = uid;
+                if (uid) {
+                    this.isLoginFlag = true;
+                    const uidRef =await this.dbQuery("users", uid);
+                    this.adminAccount = uidRef.exists();
+                }
+                this.authIsEnd = true;
             },
             computed: {
             },
             methods: {
                 firestoreInit: function () {
                     return new Promise((resolve, reject) => {
-                        import("/js/firestore.js?v=1.0.04")
+                        import("/js/firestore.js?v=1.0.06")
                             .then(module => {
                                 thisApp.dbAssembly = module.dbAssembly;
                                 resolve(true);
@@ -86,9 +101,17 @@
                     let { db, doc, deleteDoc } = await thisApp.getDbAssembly();
                     return await deleteDoc(doc(db, collectionName, docId));
                 },
+                isLogin: async function () {
+                    let { isLogin } = await thisApp.getDbAssembly();
+                    return await isLogin();
+                },
                 signIn: async function () {
                     let { googleSignIn } = await thisApp.getDbAssembly();
                     return await googleSignIn();
+                },
+                accountSignOut: async function () {
+                    let { accountSignOut } = await thisApp.getDbAssembly();
+                    await accountSignOut();
                 },
                 signInWithEmail: async function (email, password) {
                     let { emailSignIn } = await thisApp.getDbAssembly();
@@ -133,6 +156,15 @@
                         <li class="nav-item me-3 px-2">
                             <a class="nav-link text-dark" href="/manga">百合漫畫區</a>
                         </li>
+                        <li v-show="adminAccount" class="nav-item me-3 px-2">
+                            <a class="nav-link text-dark" href="/adminConsole">管理區</a>
+                        </li>
+                    </ul>
+                    <ul class="navbar-nav flex-grow-1" style="justify-content: flex-end">
+                        <li v-show="authIsEnd" class="nav-item me-3 px-2">
+                            <div v-if="!isLoginFlag" class="nav-link text-dark" @click="signIn()" style="cursor:pointer">登入</div>
+                            <div v-if="isLoginFlag" class="nav-link text-dark" @click="accountSignOut()" style="cursor:pointer">登出</div>
+                        </li>
                     </ul>
                 </div>
             </div>
@@ -156,9 +188,8 @@
                 <p class="fw-bold fs-5 title-text">網站介紹</p>
                 大家好，我是百合中毒患者<br />
                 網站使用的是<a href="https://s7514381.github.io/" target="_blank">s7514381.github.io</a>大佬自製的框架，並且協助製作而成。各位有興趣可以去參考學習。<br /><br />
-                這算是個人紀錄的一個部落格提供給各位參考查詢，但是本站只介紹有女孩子之間戀愛的百合也就是GL作品，所以在本站所說的百合指的都是GL作品。希望可以讓有相同愛好的各位可以節省找尋百合作品的時間，如果有沒有收集到的作品也歡迎聯繫我!<br /><br />
-                主要是漫畫類作品，包含小說的漫畫化，動畫作品也有收集在內，單純只有小說的作品就不介紹了。<br />
-                pixiv以及twitter上也有許多的創作百合，但多數是短篇作品就不一一介紹了，畢竟數量繁多。這裡只介紹有商業化的也就是有連載或是出單行本並且不是短篇(至少有一本的篇幅)的作品，若是有用愛發電自行連載的也有收集。<br /><br />
+                算是個人的紀錄提供給各位參考查詢，但是只有女孩子之間戀愛的百合也就是GL作品。只有配角的百合作品沒有收錄。<br /><br />
+                只有商業化的連載、單行本或非商業化作者自行連載的作品並且不是短篇(至少有一本的篇幅)。<br /><br />
                 相關連結頁面有放一些平常我在用的網站供各位參考。若是有任何問題歡迎聯繫我<a href="mailto:zrobbertz@gmail.com">zrobbertz@gmail.com</a>。
             </div>
         </div>
