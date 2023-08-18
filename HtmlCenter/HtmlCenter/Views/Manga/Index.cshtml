@@ -636,7 +636,7 @@
 					//if (tagIndex !== -1) {
 					//	this.dynamicTags[tagIndex].color = this.newTagColor;
 					//}
-					this.dynamicTags.push({ label: this.newTagLabel, color: this.newTagColor, type: this.selectedDynamicTagType, tagList: [] });
+					this.dynamicTags.push({ id: this.dynamicTags.length + 9999, label: this.newTagLabel, color: this.newTagColor, type: this.selectedDynamicTagType, tagList: [] });
 					this.dynamicTagsTemp = JSON.parse(JSON.stringify(this.dynamicTags));
 					this.newTagLabel = '';
 
