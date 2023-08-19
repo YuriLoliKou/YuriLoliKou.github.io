@@ -218,3 +218,50 @@ header {
     font-size: 13px;
     cursor: pointer;
 }
+
+/*@media (min-width: 576px) {
+    .tagEdit {
+        top: 5px;
+        right: 5px;
+    }
+}*/
+
+.responsive-image {
+    max-height: 150px;
+    max-width: 100px;
+}
+
+@media (max-width: 575px) {
+    .responsive-image {
+        max-height: 150px;
+        max-width: 100px;
+    }
+}
+
+@media (min-width: 576px) and (max-width: 991px) {
+    .responsive-image {
+        max-height: 175px;
+        max-width: 115px;
+    }
+}
+
+@media (min-width: 992px) and (max-width: 1199px) {
+    .responsive-image {
+        max-height: 175px;
+        max-width: 115px;
+    }
+}
+
+@media (min-width: 1200px) {
+    .responsive-image {
+        max-height: 200px;
+        max-width: 130px;
+    }
+}
+
+@media (min-width: 1400px) {
+    .responsive-image {
+        max-height: 225px;
+        max-width: 150px;
+    }
+}
