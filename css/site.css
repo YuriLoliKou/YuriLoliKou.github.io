@@ -208,6 +208,17 @@ header {
     cursor: pointer;
 }
 
+.collapseData {
+    position: absolute;
+    top: 1.5px;
+    right: -10px;
+    display: flex;
+    justify-content: right;
+    align-items: center;
+    font-size: 12px;
+    cursor: pointer;
+}
+
 .tagEdit {
     position: absolute;
     top: 15px;
@@ -219,49 +230,30 @@ header {
     cursor: pointer;
 }
 
-/*@media (min-width: 576px) {
-    .tagEdit {
-        top: 5px;
-        right: 5px;
-    }
-}*/
-
 .responsive-image {
-    max-height: 150px;
-    max-width: 100px;
+    max-height: 175px;
+    max-width: 120px;
 }
 
 @media (max-width: 575px) {
     .responsive-image {
-        max-height: 150px;
         max-width: 100px;
+        max-height: 150px;
     }
 }
 
-@media (min-width: 576px) and (max-width: 991px) {
+@media (min-width: 576px) and (max-width: 1399px) {
     .responsive-image {
-        max-height: 175px;
-        max-width: 115px;
-    }
-}
-
-@media (min-width: 992px) and (max-width: 1199px) {
-    .responsive-image {
-        max-height: 175px;
-        max-width: 115px;
-    }
-}
-
-@media (min-width: 1200px) {
-    .responsive-image {
-        max-height: 200px;
-        max-width: 130px;
+        width: 100px;
+        height: 145px;
+        object-fit: cover;
     }
 }
 
 @media (min-width: 1400px) {
     .responsive-image {
-        max-height: 225px;
-        max-width: 150px;
+        width: 120px;
+        height: 175px;
+        object-fit: cover;
     }
 }
