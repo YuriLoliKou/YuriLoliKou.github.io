@@ -228,6 +228,7 @@ header {
     align-items: center;
     font-size: 13px;
     cursor: pointer;
+    z-index: 2;
 }
 
 .responsive-image {

@@ -234,13 +234,11 @@
 				<span v-show="searchMode == 2" class="ms-2 text-danger fw-bold" style="align-self: center;">排除模式:點擊標籤可排除包含此標籤的資料</span>
 			</div>
 
-			<div class="input-group mb-1">
-				<div class="form-check-inline mb-2">
-					<button class="btn btn-outline-success btn-sm" @click="selectAllTags">全選</button>
-				</div>
-				<div class="form-check-inline mb-2">
-					<button class="btn btn-outline-dark btn-sm" @click="clearAllTags">全部清除</button>
-				</div>
+			<div class="form-check-inline mb-2">
+				<button class="btn btn-outline-success btn-sm" @click="selectAllTags">全選</button>
+			</div>
+			<div class="form-check-inline mb-2">
+				<button class="btn btn-outline-dark btn-sm" @click="clearAllTags">全部清除</button>
 			</div>
 			
 			
